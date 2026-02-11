@@ -11,15 +11,18 @@ postsubmits:
         preset-kubevirtci-quay-credential: "true"
       branches:
         - main
-      cluster: kubevirt-prow-workloads
+      cluster: prow-workloads
       spec:
         containers:
-          - image: quay.io/kubevirtci/bootstrap:v20240829-fb5890c
+          - image: quay.io/kubevirtci/bootstrap:v20251218-e7a7fc9
             command:
               - "/usr/local/bin/runner.sh"
               - "/bin/bash"
               - "-c"
-              - "cat $QUAY_PASSWORD | docker login --username $(cat $QUAY_USER) --password-stdin=true quay.io && make docker-build docker-push"
+              - |
+                export PLATFORMS=all &&
+                cat $QUAY_PASSWORD | docker login --username $(cat $QUAY_USER) --password-stdin=true quay.io &&
+                make docker-build docker-push
             # docker-in-docker needs privileged mode
             securityContext:
               privileged: true
@@ -34,15 +37,16 @@ postsubmits:
         preset-kubevirtci-quay-credential: "true"
       branches:
         - ^\d+\.\d+\.\d+$
-      cluster: kubevirt-prow-workloads
+      cluster: prow-workloads
       spec:
         containers:
-          - image: quay.io/kubevirtci/bootstrap:v20240829-fb5890c
+          - image: quay.io/kubevirtci/bootstrap:v20251218-e7a7fc9
             command:
               - "/usr/local/bin/runner.sh"
               - "/bin/bash"
               - "-c"
               - |
+                export PLATFORMS=all &&
                 cat $QUAY_PASSWORD | docker login --username $(cat $QUAY_USER) --password-stdin=true quay.io &&
                 # Only push images on tags
                 COMMIT_TAG=$(git tag --points-at HEAD | head -1)

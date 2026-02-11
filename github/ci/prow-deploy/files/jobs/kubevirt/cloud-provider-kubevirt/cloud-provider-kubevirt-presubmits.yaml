@@ -9,7 +9,7 @@ presubmits:
     always_run: true
     optional: false
     skip_report: false
-    cluster: kubevirt-prow-workloads
+    cluster: prow-workloads
     decorate: true
     decoration_config:
       timeout: 10m
@@ -23,7 +23,7 @@ presubmits:
       nodeSelector:
         type: bare-metal-external
       containers:
-        - image: quay.io/kubevirtci/golang:v20240829-fb5890c
+        - image: quay.io/kubevirtci/golang:v20251218-e7a7fc9
           command:
             - "/usr/local/bin/runner.sh"
             - "/bin/sh"
@@ -31,7 +31,7 @@ presubmits:
             - "make test"
           env:
             - name: GIMME_GO_VERSION
-              value: "1.20"
+              value: "1.24.11"
           # docker-in-docker needs privileged mode
           securityContext:
             privileged: true
@@ -47,7 +47,7 @@ presubmits:
     always_run: true
     optional: false
     skip_report: false
-    cluster: kubevirt-prow-workloads
+    cluster: prow-workloads
     decorate: true
     decoration_config:
       timeout: 10m
@@ -61,7 +61,7 @@ presubmits:
       nodeSelector:
         type: bare-metal-external
       containers:
-        - image: quay.io/kubevirtci/golang:v20240829-fb5890c
+        - image: quay.io/kubevirtci/golang:v20251218-e7a7fc9
           command:
             - "/usr/local/bin/runner.sh"
             - "/bin/sh"
@@ -69,7 +69,7 @@ presubmits:
             - "make lint"
           env:
             - name: GIMME_GO_VERSION
-              value: "1.20"
+              value: "1.24.11"
           # docker-in-docker needs privileged mode
           securityContext:
             privileged: true
@@ -80,7 +80,7 @@ presubmits:
     always_run: true
     optional: false
     decorate: true
-    cluster: kubevirt-prow-workloads
+    cluster: prow-workloads
     decoration_config:
       grace_period: 5m0s
       timeout: 3h0m0s
@@ -97,7 +97,7 @@ presubmits:
         - /bin/sh
         - -c
         - make functest
-        image: quay.io/kubevirtci/golang:v20240829-fb5890c
+        image: quay.io/kubevirtci/golang:v20251218-e7a7fc9
         name: ""
         resources:
           requests:
@@ -106,6 +106,6 @@ presubmits:
           privileged: true
         env:
           - name: GIMME_GO_VERSION
-            value: "1.20"
+            value: "1.24.11"
       nodeSelector:
         type: bare-metal-external

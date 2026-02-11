@@ -1,0 +1,32 @@
+kind: StatefulSet
+apiVersion: apps/v1
+metadata:
+  name: search
+  namespace: ci-search
+spec:
+  template:
+    spec:
+      nodeSelector: null
+      tolerations: null
+      containers:
+      - name: web
+        image: registry.ci.openshift.org/ci/ci-search:latest
+        resources:
+          requests:
+            cpu: 100m
+            memory: 3Gi
+          limits:
+            memory: 8Gi
+        command:
+        - /usr/bin/search
+        - --v=5
+        - --debug-listen=localhost:6060
+        - --config=/etc/ci-search/config.yaml
+        - --interval=10m
+        - --max-age=672h
+        - --path=/var/lib/ci-search/
+        - --deck-uri=https://prow.ci.kubevirt.io/
+        - --job-uri-prefix=https://prow.ci.kubevirt.io/view/gs/
+        - --index-bucket=kubevirt-prow
+      securityContext:
+        fsGroup: 1000

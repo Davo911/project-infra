@@ -3,9 +3,8 @@ postsubmits:
   - name: push-release-hostpath-provisioner-operator-images
     branches:
     - release-v\d+\.\d+
-    cluster: kubevirt-prow-workloads
+    cluster: prow-workloads
     always_run: true
-    optional: false
     skip_report: true
     annotations:
       testgrid-create-test-group: "false"
@@ -18,7 +17,7 @@ postsubmits:
       preset-kubevirtci-quay-credential: "true"
     spec:
       containers:
-      - image: quay.io/kubevirtci/golang:v20240829-fb5890c
+      - image: quay.io/kubevirtci/golang:v20251218-e7a7fc9
         env:
         - name: DOCKER_REPO
           value: quay.io/kubevirt
@@ -44,9 +43,8 @@ postsubmits:
   - name: push-latest-hostpath-provisioner-operator-images
     branches:
     - main
-    cluster: kubevirt-prow-workloads
+    cluster: prow-workloads
     always_run: true
-    optional: false
     skip_report: true
     annotations:
       testgrid-create-test-group: "false"
@@ -59,7 +57,7 @@ postsubmits:
       preset-kubevirtci-quay-credential: "true"
     spec:
       containers:
-      - image: quay.io/kubevirtci/golang:v20240829-fb5890c
+      - image: quay.io/kubevirtci/golang:v20251218-e7a7fc9
         env:
         - name: DOCKER_REPO
           value: quay.io/kubevirt
@@ -85,7 +83,6 @@ postsubmits:
     - release-v\d+\.\d+
     cluster: kubevirt-prow-control-plane
     always_run: true
-    optional: false
     skip_report: true
     annotations:
       testgrid-create-test-group: "false"
@@ -100,7 +97,7 @@ postsubmits:
       preset-kubevirtci-quay-credential: "false"
     spec:
       containers:
-      - image: quay.io/kubevirtci/golang:v20240829-fb5890c
+      - image: quay.io/kubevirtci/golang:v20251218-e7a7fc9
         env:
         - name: DOCKER_REPO
           value: quay.io/kubevirt

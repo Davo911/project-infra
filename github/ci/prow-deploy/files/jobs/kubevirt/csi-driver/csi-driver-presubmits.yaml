@@ -12,8 +12,8 @@ presubmits:
       skip_report: false
       decorate: true
       decoration_config:
-      timeout: 1h
-      grace_period: 5m
+        timeout: 1h
+        grace_period: 5m
       max_concurrency: 11
       labels:
         preset-podman-in-container-enabled: "true"
@@ -21,7 +21,7 @@ presubmits:
         preset-shared-images: "true"
       spec:
         containers:
-          - image: quay.io/kubevirtci/golang:v20240829-fb5890c
+          - image: quay.io/kubevirtci/golang:v20251218-e7a7fc9
             command:
               - "/usr/local/bin/runner.sh"
               - "/bin/sh"
@@ -48,8 +48,8 @@ presubmits:
       skip_report: false
       decorate: true
       decoration_config:
-      timeout: 1h
-      grace_period: 5m
+        timeout: 1h
+        grace_period: 5m
       max_concurrency: 11
       labels:
         preset-podman-in-container-enabled: "true"
@@ -57,7 +57,7 @@ presubmits:
         preset-shared-images: "true"
       spec:
         containers:
-          - image: quay.io/kubevirtci/golang:v20240829-fb5890c
+          - image: quay.io/kubevirtci/golang:v20251218-e7a7fc9
             command:
               - "/usr/local/bin/runner.sh"
               - "/bin/sh"
@@ -84,8 +84,8 @@ presubmits:
       skip_report: false
       decorate: true
       decoration_config:
-      timeout: 1h
-      grace_period: 5m
+        timeout: 1h
+        grace_period: 5m
       max_concurrency: 11
       labels:
         preset-podman-in-container-enabled: "true"
@@ -93,7 +93,7 @@ presubmits:
         preset-shared-images: "true"
       spec:
         containers:
-          - image: quay.io/kubevirtci/golang:v20240829-fb5890c
+          - image: quay.io/kubevirtci/golang:v20251218-e7a7fc9
             command:
               - "/usr/local/bin/runner.sh"
               - "/bin/sh"
@@ -109,7 +109,7 @@ presubmits:
               requests:
                 memory: "4Gi"
     - name: pull-csi-driver-e2e-k8s
-      cluster: kubevirt-prow-workloads
+      cluster: prow-workloads
       skip_branches:
         - release-\d+\.\d+
       annotations:
@@ -131,7 +131,7 @@ presubmits:
         nodeSelector:
           type: bare-metal-external
         containers:
-          - image: quay.io/kubevirtci/golang:v20240829-fb5890c
+          - image: quay.io/kubevirtci/golang:v20251218-e7a7fc9
             command:
               - "/usr/local/bin/runner.sh"
               - "/bin/sh"
@@ -142,9 +142,9 @@ presubmits:
               privileged: true
             resources:
               requests:
-                memory: "29Gi"
+                memory: "52Gi"
     - name: pull-csi-driver-split-e2e-k8s
-      cluster: kubevirt-prow-workloads
+      cluster: prow-workloads
       skip_branches:
         - release-\d+\.\d+
       annotations:
@@ -166,7 +166,7 @@ presubmits:
         nodeSelector:
           type: bare-metal-external
         containers:
-          - image: quay.io/kubevirtci/golang:v20240829-fb5890c
+          - image: quay.io/kubevirtci/golang:v20251218-e7a7fc9
             command:
               - "/usr/local/bin/runner.sh"
               - "/bin/sh"
@@ -177,9 +177,9 @@ presubmits:
               privileged: true
             resources:
               requests:
-                memory: "29Gi"
+                memory: "52Gi"
     - name: pull-csi-driver-split-k8s-suite-k8s
-      cluster: kubevirt-prow-workloads
+      cluster: prow-workloads
       skip_branches:
         - release-\d+\.\d+
       annotations:
@@ -201,7 +201,7 @@ presubmits:
         nodeSelector:
           type: bare-metal-external
         containers:
-          - image: quay.io/kubevirtci/golang:v20240829-fb5890c
+          - image: quay.io/kubevirtci/golang:v20251218-e7a7fc9
             command:
               - "/usr/local/bin/runner.sh"
               - "/bin/sh"
@@ -212,7 +212,7 @@ presubmits:
               privileged: true
             resources:
               requests:
-                memory: "29Gi"
+                memory: "52Gi"
     - name: pull-csi-driver-goveralls
       cluster: kubevirt-prow-control-plane
       skip_branches:
@@ -232,7 +232,7 @@ presubmits:
         preset-bazel-cache: "true"
       spec:
         containers:
-          - image: quay.io/kubevirtci/bootstrap:v20240829-fb5890c
+          - image: quay.io/kubevirtci/bootstrap:v20251218-e7a7fc9
             env:
               - name: COVERALLS_TOKEN_FILE
                 value: /root/.docker/secrets/coveralls/token

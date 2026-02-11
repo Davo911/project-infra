@@ -4,9 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/r3labs/diff/v3"
-	"io/ioutil"
-	"k8s.io/test-infra/prow/repoowners"
 	"os"
 	"os/exec"
 	"path"
@@ -15,26 +12,45 @@ import (
 	"strconv"
 	"strings"
 
+	pi_github "kubevirt.io/project-infra/pkg/github"
+
+	"github.com/r3labs/diff/v3"
+	"sigs.k8s.io/prow/pkg/repoowners"
+
 	"github.com/go-git/go-git/v5"
 	gitconfig "github.com/go-git/go-git/v5/config"
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/storage/memory"
 	"github.com/sirupsen/logrus"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	prowapi "k8s.io/test-infra/prow/apis/prowjobs/v1"
-	v1 "k8s.io/test-infra/prow/client/clientset/versioned/typed/prowjobs/v1"
-	"k8s.io/test-infra/prow/config"
-	gitv2 "k8s.io/test-infra/prow/git/v2"
-	"k8s.io/test-infra/prow/github"
-	"k8s.io/test-infra/prow/pjutil"
+	prowapi "sigs.k8s.io/prow/pkg/apis/prowjobs/v1"
+	v1 "sigs.k8s.io/prow/pkg/client/clientset/versioned/typed/prowjobs/v1"
+	"sigs.k8s.io/prow/pkg/config"
+	gitv2 "sigs.k8s.io/prow/pkg/git/v2"
+	"sigs.k8s.io/prow/pkg/github"
+	"sigs.k8s.io/prow/pkg/pjutil"
 )
 
-const basicHelpCommentText = `You can trigger rehearsal for all jobs by commenting either ` + "`/rehearse`" + ` or ` + "`/rehearse all`" + `
-on this PR.
+const basicHelpCommentText = `
+<details>
+<summary>Further information on rehearsals</summary>
 
-For a specific PR you can comment ` + "`/rehearse {job-name}`" + `.
+A rehearsal can be triggered for all jobs by commenting either ` + "`/rehearse`" + ` or ` + "`/rehearse all`" + ` on this PR.
 
-For a list of jobs that you can rehearse you can comment ` + "`/rehearse ?`" + `.`
+A rehearsal for a specific job can be triggered by commenting ` + "`/rehearse {job-name}`" + `.
+
+Commenting ` + "`/rehearse ?`" + ` triggers a comment with a list of jobs that can be rehearsed.
+
+A pull request can be rehearsed if either the user is authorized to rehearse or the pull
+request has the ` + "`ok-to-rehearse`" + ` label.
+
+Authorized users are the group of users that are members of the KubeVirt GitHub 
+organization AND either are approvers[1] for all files in the pull request or are
+top-level approvers[1] in the ` + "`project-infra`" + ` project.
+
+[1]: see [OWNERS](https://www.kubernetes.dev/docs/guide/owners/#owners) file definition for reference.
+</details>
+`
 
 var log *logrus.Logger
 
@@ -138,7 +154,7 @@ func (h *GitHubEventsHandler) handleIssueComment(log *logrus.Entry, event *githu
 		return
 	}
 
-	org, repo, err := gitv2.OrgRepo(event.Repo.FullName)
+	org, repo, err := pi_github.OrgRepo(event.Repo.FullName)
 	if err != nil {
 		log.WithError(err).Errorf("Could not get org/repo from the event")
 	}
@@ -146,7 +162,7 @@ func (h *GitHubEventsHandler) handleIssueComment(log *logrus.Entry, event *githu
 	if err != nil {
 		log.WithError(err).Errorf("Could not get PR number %d", event.Issue.Number)
 	}
-	repoClient, err := h.getRebasedRepoClient(log, pr, err, org, repo)
+	repoClient, err := h.getRebasedRepoClient(log, pr, org, repo)
 	if err != nil {
 		log.WithError(err).Error("could not get repo client")
 		return
@@ -299,7 +315,7 @@ func (h *GitHubEventsHandler) handlePullRequestUpdateEvent(log *logrus.Entry, ev
 		return
 	}
 
-	org, repo, err := gitv2.OrgRepo(event.Repo.FullName)
+	org, repo, err := pi_github.OrgRepo(event.Repo.FullName)
 	if err != nil {
 		log.WithError(err).Errorf("Could not get org/repo from the event")
 	}
@@ -307,7 +323,7 @@ func (h *GitHubEventsHandler) handlePullRequestUpdateEvent(log *logrus.Entry, ev
 	if err != nil {
 		log.WithError(err).Errorf("Could not get PR number %d", event.PullRequest.Number)
 	}
-	repoClient, err := h.getRebasedRepoClient(log, pr, err, org, repo)
+	repoClient, err := h.getRebasedRepoClient(log, pr, org, repo)
 	if err != nil {
 		log.WithError(err).Error("could not get repo client")
 		return
@@ -335,12 +351,12 @@ func (h *GitHubEventsHandler) handlePullRequestUpdateEvent(log *logrus.Entry, ev
 }
 
 func (h *GitHubEventsHandler) handleRehearsalForPR(log *logrus.Entry, pr *github.PullRequest, eventGUID string, commentBody string) {
-	org, repo, err := gitv2.OrgRepo(pr.Base.Repo.FullName)
+	org, repo, err := pi_github.OrgRepo(pr.Base.Repo.FullName)
 	if err != nil {
 		log.WithError(err).Errorf("Could not parse repo name: %s", pr.Base.Repo.FullName)
 		return
 	}
-	repoClient, err := h.getRebasedRepoClient(log, pr, err, org, repo)
+	repoClient, err := h.getRebasedRepoClient(log, pr, org, repo)
 	if err != nil {
 		log.WithError(err).Error("could not get repo client")
 		return
@@ -441,7 +457,7 @@ func (h *GitHubEventsHandler) handleRehearsalForPR(log *logrus.Entry, pr *github
 	}
 }
 
-func (h *GitHubEventsHandler) getRebasedRepoClient(log *logrus.Entry, pr *github.PullRequest, err error, org string, repo string) (gitv2.RepoClient, error) {
+func (h *GitHubEventsHandler) getRebasedRepoClient(log *logrus.Entry, pr *github.PullRequest, org string, repo string) (gitv2.RepoClient, error) {
 	log.Debugln("Generating git client")
 	rebasedRepoClient, err := h.gitClientFactory.ClientFor(org, repo)
 	if err != nil {
@@ -456,7 +472,7 @@ func (h *GitHubEventsHandler) getRebasedRepoClient(log *logrus.Entry, pr *github
 	if err != nil {
 		return nil, fmt.Errorf("could not change repo config: %w", err)
 	}
-	err = rebasedRepoClient.MergeAndCheckout(pr.Base.SHA, string(github.MergeSquash), pr.Head.SHA)
+	err = rebasedRepoClient.MergeAndCheckout(pr.Base.SHA, "squash", pr.Head.SHA)
 	if err != nil {
 		return nil, fmt.Errorf("could not rebase the PR on the target branch: %w", err)
 	}
@@ -516,7 +532,10 @@ func (h *GitHubEventsHandler) generateProwJobs(
 	var jobs []prowapi.ProwJob
 
 	for path, headConfig := range headConfigs {
-		baseConfig, _ := baseConfigs[path]
+		baseConfig, ok := baseConfigs[path]
+		if !ok {
+			log.Errorf("Path %s not found in base configs", path)
+		}
 		jobs = append(jobs, h.generatePresubmits(headConfig, baseConfig, pr, eventGUID)...)
 	}
 
@@ -562,7 +581,7 @@ func (h *GitHubEventsHandler) generatePresubmits(
 			}
 
 			repoOrg := repoFromJobKey(presubmitKey)
-			org, repo, err := gitv2.OrgRepo(repoOrg)
+			org, repo, err := pi_github.OrgRepo(repoOrg)
 			if err != nil {
 				log.Errorf(
 					"Could not extract repo and org from job key: %s. Job name: %s",
@@ -592,7 +611,7 @@ func (h *GitHubEventsHandler) loadConfigsAtRef(
 	changedJobConfigs []string, git gitv2.RepoClient, ref string) (map[string]*config.Config, error) {
 	configs := map[string]*config.Config{}
 
-	tmpdir, err := ioutil.TempDir("", "prow-configs")
+	tmpdir, err := os.MkdirTemp("", "prow-configs")
 	if err != nil {
 		log.WithError(err).Error("Could not create a temp directory to store configs.")
 		return nil, err
@@ -641,7 +660,7 @@ func (h *GitHubEventsHandler) loadConfigsAtRef(
 		// directories as we do here
 		// thus we need to reset the SourcePath to the original value for each job config
 		for _, presubmits := range pc.PresubmitsStatic {
-			for index, _ := range presubmits {
+			for index := range presubmits {
 				presubmits[index].JobBase.SourcePath = path.Join(git.Directory(), changedJobConfig)
 			}
 		}
@@ -676,14 +695,6 @@ func repoFromJobKey(jobKey string) string {
 	return strings.Join(r, "/")
 }
 
-func hashPeriodicsConfig(periodics []config.Periodic) map[string]config.Periodic {
-	p := map[string]config.Periodic{}
-	for _, periodic := range periodics {
-		p[periodic.JobBase.Name] = periodic
-	}
-	return p
-}
-
 func hashPresubmitsConfig(presubmits map[string][]config.Presubmit) map[string]config.Presubmit {
 	presubmitsFlat := map[string]config.Presubmit{}
 	for repo, presubmitsForRepo := range presubmits {
@@ -703,7 +714,7 @@ func catFile(log *logrus.Logger, gitDir, file, refspec string) ([]byte, int) {
 }
 
 func writeTempFile(log *logrus.Logger, basedir string, content []byte) (string, error) {
-	tmpfile, err := ioutil.TempFile(basedir, "job-config")
+	tmpfile, err := os.CreateTemp(basedir, "job-config")
 	if err != nil {
 		log.WithError(err).Errorf("Could not create temp file for job config.")
 		return "", err

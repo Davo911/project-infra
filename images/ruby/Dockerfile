@@ -1,4 +1,4 @@
-FROM quay.io/kubevirtci/bootstrap:v20230502-bfaa042
+FROM quay.io/kubevirtci/bootstrap:v20251218-e7a7fc9
 
 RUN dnf install -y \
         curl \

@@ -1,26 +1,5 @@
-config_updater:
-  maps:
-    github/ci/prow-deploy/kustom/base/configs/current/config/config.yaml:
-      name: config
-      clusters:
-        default:
-          - kubevirt-prow
-    github/ci/prow-deploy/files/jobs/**/*.yaml:
-      gzip: true
-      name: job-config
-      clusters:
-        default:
-          - kubevirt-prow
-    github/ci/prow-deploy/kustom/base/configs/current/plugins/plugins.yaml:
-      name: plugins
-      clusters:
-        default:
-          - kubevirt-prow
-    github/ci/prow-deploy/kustom/base/configs/current/labels/labels.yaml:
-      name: label-config
-      clusters:
-        default:
-          - kubevirt-prow
+# source https://github.com/kubernetes-sigs/prow/blob/8cd4af136cc0eeb9ee7ab9fc11cd99f7adba663e/pkg/plugins/config.go#L52
+# let's keep the order in the same way as it's defined in above configuration
 
 plugins:
 
@@ -100,6 +79,12 @@ plugins:
     - release-note
     - trigger
 
+  kubevirt/charts:
+    plugins:
+    - approve
+    - lgtm
+    - trigger
+
   kubevirt/cloud-image-builder:
     plugins:
     - approve
@@ -161,6 +146,13 @@ plugins:
     - help
 
   kubevirt/community:
+    plugins:
+    - approve
+    - lgtm
+    - owners-label
+    - trigger
+
+  kubevirt/enhancements:
     plugins:
     - approve
     - lgtm
@@ -239,6 +231,14 @@ plugins:
     - trigger
 
   kubevirt/hyperconverged-cluster-operator:
+    plugins:
+    - approve
+    - lgtm
+    - owners-label
+    - release-note
+    - trigger
+
+  kubevirt/irsa-mutation-webhook:
     plugins:
     - approve
     - lgtm
@@ -404,6 +404,7 @@ plugins:
   kubevirt/secrets:
     plugins:
     - approve
+    - branchcleaner
     - lgtm
     - trigger
 
@@ -462,6 +463,15 @@ plugins:
     - owners-label
     - trigger
 
+  kubevirt/virt-template:
+    plugins:
+    - approve
+    - lgtm
+    - owners-label
+    - release-note
+    - trigger
+    - help
+
   kubevirt/vm-console-proxy:
     plugins:
     - approve
@@ -479,6 +489,21 @@ plugins:
     - release-note
     - trigger
 
+  kubevirt/kubevirt-migration-controller:
+    plugins:
+    - approve
+    - lgtm
+    - owners-label
+    - release-note
+    - trigger
+    
+  kubevirt/kubevirt-migration-operator:
+    plugins:
+    - approve
+    - lgtm
+    - owners-label
+    - release-note
+    - trigger
 
   nmstate/kubernetes-nmstate:
     plugins:
@@ -549,10 +574,6 @@ external_plugins:
     events:
       - pull_request
       - issue_comment
-  - name: botreview
-    endpoint: http://botreview:9900
-    events:
-      - pull_request
   kubevirt/kubevirt:
   - name: phased
     endpoint: http://prow-phased:9900
@@ -563,6 +584,211 @@ external_plugins:
     events:
       - issue_comment
       - pull_request
+  - name: test-subset
+    endpoint: http://test-subset:9900
+    events:
+      - issue_comment
+
+approve:
+- repos:
+  - kubevirt/project-infra
+  - kubevirt/machine-remediation-operator
+  - kubevirt/kubevirtci
+  - kubevirt/charts
+  - kubevirt/containerdisks
+  - kubevirt/kubevirt.github.io
+  - kubevirt/cloud-image-builder
+  - kubevirt/community
+  - kubevirt/kubevirt-tutorial
+  - kubevirt/kubevirt
+  - kubevirt/bridge-marker
+  - kubevirt/containerized-data-importer
+  - kubevirt/cluster-api-provider-kubevirt
+  - kubevirt/hostpath-provisioner
+  - kubevirt/hostpath-provisioner-operator
+  - kubevirt/katacoda-scenarios
+  - kubevirt/demo
+  - kubevirt/cluster-network-addons-operator
+  - kubevirt/kubesecondarydns
+  - kubevirt/ipam-extensions
+  - nmstate/kubernetes-nmstate
+  - k8snetworkplumbingwg/kubemacpool
+  - kubevirt/kubectl-virt-plugin
+  - kubevirt/node-maintenance-operator
+  - kubevirt/ansible-kubevirt-modules
+  - kubevirt/hyperconverged-cluster-operator
+  - kubevirt/common-instancetypes
+  - kubevirt/common-templates
+  - kubevirt/kvm-info-nfd-plugin
+  - kubevirt/cpu-nfd-plugin
+  - kubevirt/node-labeller
+  - kubevirt/kubevirt-template-validator
+  - kubevirt/kubevirt-ssp-operator
+  - kubevirt/ssp-operator
+  - kubevirt/kubevirt-tekton-tasks
+  - kubevirt/must-gather
+  - kubevirt/csi-driver
+  - kubevirt/user-guide
+  - kubevirt/terraform-provider-kubevirt
+  - kubevirt/kubevirt-velero-plugin
+  - kubevirt/qe-tools
+  - kubevirt/cloud-provider-kubevirt
+  - kubevirt/test-benchmarks
+  - kubevirt/vm-console-proxy
+  - kubevirt/sig-release
+  - kubevirt/kubevirt.core
+  - kubevirt/managed-tenant-quota
+  - kubevirt/application-aware-quota
+  - kubevirt/dra-pci-driver
+  - kubevirt/enhancements
+  - kubevirt/irsa-mutation-webhook
+  - kubevirt/virt-template
+  - kubevirt/kubevirt-migration-controller
+  - kubevirt/kubevirt-migration-operator
+  require_self_approval: true
+  lgtm_acts_as_approve: false
+  ignore_review_state: true
+  commandHelpLink: https://prow.ci.kubevirt.io/command-help
+  pr_process_link: https://github.com/kubevirt/community/blob/main/docs/add-merge-automation-to-your-repository.md#example-workflow
+- repos:
+  - kubevirt/secrets
+  require_self_approval: false
+  lgtm_acts_as_approve: true
+  ignore_review_state: true
+  commandHelpLink: https://prow.ci.kubevirt.io/command-help
+  pr_process_link: https://github.com/kubevirt/community/blob/main/docs/add-merge-automation-to-your-repository.md#example-workflow
+
+blunderbuss:
+  ignore_drafts: true
+
+config_updater:
+  maps:
+    github/ci/prow-deploy/kustom/base/configs/current/config/config.yaml:
+      name: config
+      clusters:
+        default:
+        - kubevirt-prow
+    github/ci/prow-deploy/files/jobs/**/*.yaml:
+      gzip: true
+      name: job-config
+      clusters:
+        default:
+        - kubevirt-prow
+    github/ci/prow-deploy/kustom/base/configs/current/plugins/plugins.yaml:
+      name: plugins
+      clusters:
+        default:
+        - kubevirt-prow
+    github/ci/prow-deploy/kustom/base/configs/current/labels/labels.yaml:
+      name: label-config
+      clusters:
+        default:
+        - kubevirt-prow
+
+help:
+  help_guidelines_url: "https://www.github.com/kubevirt/community/tree/main/contributors/help-wanted.md"
+  help_guidelines_summary: |
+    - **No Barrier to Entry**
+    - **Clear Task**
+    - **Solution Explained**
+    - **Provides Context**
+    - **Identifies Relevant Code**
+    - **Gives Examples**
+    - **Ready to Test**
+    - **Goldilocks priority**
+    - **Up-To-Date**
+
+label:
+  restricted_labels:
+
+    # ORG section
+    # for repo specific sections see below
+    'kubevirt':
+    - allowed_users:
+      #
+      # kubevirt-bot ONLY is allowed to use "skip-review"
+      # targets are PRs generated by automation where automated checks are sufficient
+      # each target requires verification that sufficient automated checks are in place, so that
+      # merging faulty PRs is avoided
+      #
+      - kubevirt-bot
+      label: skip-review
+
+    - allowed_users:
+      - kubevirt-bot
+      allowed_teams:
+      - restricted-labels-kubevirt
+      label: needs-approver-review
+
+    - allowed_teams:
+      - restricted-labels-kubevirt
+      label: good-first-issue
+
+    - allowed_teams:
+      - restricted-labels-kubevirt
+      label: approved-vep
+
+lgtm:
+- repos:
+  - kubevirt/machine-remediation-operator
+  - kubevirt/project-infra
+  - kubevirt/kubevirtci
+  - kubevirt/kubevirt.github.io
+  - kubevirt/charts
+  - kubevirt/cloud-image-builder
+  - kubevirt/community
+  - kubevirt/kubevirt-tutorial
+  - kubevirt/kubevirt
+  - kubevirt/containerdisks
+  - kubevirt/bridge-marker
+  - kubevirt/containerized-data-importer
+  - kubevirt/cluster-api-provider-kubevirt
+  - kubevirt/hostpath-provisioner
+  - kubevirt/hostpath-provisioner-operator
+  - kubevirt/katacoda-scenarios
+  - kubevirt/demo
+  - kubevirt/cluster-network-addons-operator
+  - kubevirt/kubesecondarydns
+  - kubevirt/ipam-extensions
+  - nmstate/kubernetes-nmstate
+  - k8snetworkplumbingwg/kubemacpool
+  - kubevirt/kubectl-virt-plugin
+  - kubevirt/node-maintenance-operator
+  - kubevirt/ansible-kubevirt-modules
+  - kubevirt/hyperconverged-cluster-operator
+  - kubevirt/common-instancetypes
+  - kubevirt/common-templates
+  - kubevirt/kvm-info-nfd-plugin
+  - kubevirt/cpu-nfd-plugin
+  - kubevirt/node-labeller
+  - kubevirt/kubevirt-template-validator
+  - kubevirt/kubevirt-ssp-operator
+  - kubevirt/ssp-operator
+  - kubevirt/kubevirt-tekton-tasks
+  - kubevirt/must-gather
+  - kubevirt/csi-driver
+  - kubevirt/user-guide
+  - kubevirt/terraform-provider-kubevirt
+  - kubevirt/kubevirt-velero-plugin
+  - kubevirt/qe-tools
+  - kubevirt/cloud-provider-kubevirt
+  - kubevirt/secrets
+  - kubevirt/test-benchmarks
+  - kubevirt/vm-console-proxy
+  - kubevirt/sig-release
+  - kubevirt/kubevirt.core
+  - kubevirt/managed-tenant-quota
+  - kubevirt/application-aware-quota
+  - kubevirt/dra-pci-driver
+  - kubevirt/enhancements
+  - kubevirt/irsa-mutation-webhook
+  - kubevirt/virt-template
+  - kubevirt/kubevirt-migration-controller
+  - kubevirt/kubevirt-migration-operator
+  review_acts_as_lgtm: true
+
+override:
+  allow_top_level_owners: true
 
 triggers:
 - repos:
@@ -570,6 +796,7 @@ triggers:
   - kubevirt/machine-remediation-operator
   - kubevirt/kubevirtci
   - kubevirt/kubevirt
+  - kubevirt/charts
   - kubevirt/containerdisks
   - kubevirt/kubevirt.github.io
   - kubevirt/cloud-image-builder
@@ -610,6 +837,11 @@ triggers:
   - kubevirt/kubevirt.core
   - kubevirt/managed-tenant-quota
   - kubevirt/application-aware-quota
+  - kubevirt/enhancements
+  - kubevirt/irsa-mutation-webhook
+  - kubevirt/virt-template
+  - kubevirt/kubevirt-migration-controller
+  - kubevirt/kubevirt-migration-operator
   ignore_ok_to_test: true
 - repos:
   - virtblocks/virtblocks
@@ -620,150 +852,3 @@ triggers:
 - repos:
   - k8snetworkplumbingwg/kubemacpool
   ignore_ok_to_test: true
-
-approve:
-- repos:
-  - kubevirt/project-infra
-  - kubevirt/machine-remediation-operator
-  - kubevirt/kubevirtci
-  - kubevirt/containerdisks
-  - kubevirt/kubevirt.github.io
-  - kubevirt/cloud-image-builder
-  - kubevirt/community
-  - kubevirt/kubevirt-tutorial
-  - kubevirt/kubevirt
-  - kubevirt/bridge-marker
-  - kubevirt/containerized-data-importer
-  - kubevirt/cluster-api-provider-kubevirt
-  - kubevirt/hostpath-provisioner
-  - kubevirt/hostpath-provisioner-operator
-  - kubevirt/katacoda-scenarios
-  - kubevirt/demo
-  - kubevirt/cluster-network-addons-operator
-  - kubevirt/kubesecondarydns
-  - kubevirt/ipam-extensions
-  - nmstate/kubernetes-nmstate
-  - k8snetworkplumbingwg/kubemacpool
-  - kubevirt/kubectl-virt-plugin
-  - kubevirt/node-maintenance-operator
-  - kubevirt/ansible-kubevirt-modules
-  - kubevirt/hyperconverged-cluster-operator
-  - kubevirt/common-instancetypes
-  - kubevirt/common-templates
-  - kubevirt/kvm-info-nfd-plugin
-  - kubevirt/cpu-nfd-plugin
-  - kubevirt/node-labeller
-  - kubevirt/kubevirt-template-validator
-  - kubevirt/kubevirt-ssp-operator
-  - kubevirt/ssp-operator
-  - kubevirt/kubevirt-tekton-tasks
-  - kubevirt/must-gather
-  - kubevirt/csi-driver
-  - kubevirt/user-guide
-  - kubevirt/terraform-provider-kubevirt
-  - kubevirt/kubevirt-velero-plugin
-  - kubevirt/qe-tools
-  - kubevirt/cloud-provider-kubevirt
-  - kubevirt/test-benchmarks
-  - kubevirt/vm-console-proxy
-  - kubevirt/sig-release
-  - kubevirt/kubevirt.core
-  - kubevirt/managed-tenant-quota
-  - kubevirt/application-aware-quota
-  - kubevirt/dra-pci-driver
-  require_self_approval: true
-  lgtm_acts_as_approve: false
-  ignore_review_state: true
-  commandHelpLink: https://go.k8s.io/bot-commands
-- repos:
-  - kubevirt/secrets
-  require_self_approval: false
-  lgtm_acts_as_approve: true
-  ignore_review_state: true
-  commandHelpLink: https://go.k8s.io/bot-commands
-
-lgtm:
-- repos:
-  - kubevirt/machine-remediation-operator
-  - kubevirt/project-infra
-  - kubevirt/kubevirtci
-  - kubevirt/kubevirt.github.io
-  - kubevirt/cloud-image-builder
-  - kubevirt/community
-  - kubevirt/kubevirt-tutorial
-  - kubevirt/kubevirt
-  - kubevirt/containerdisks
-  - kubevirt/bridge-marker
-  - kubevirt/containerized-data-importer
-  - kubevirt/cluster-api-provider-kubevirt
-  - kubevirt/hostpath-provisioner
-  - kubevirt/hostpath-provisioner-operator
-  - kubevirt/katacoda-scenarios
-  - kubevirt/demo
-  - kubevirt/cluster-network-addons-operator
-  - kubevirt/kubesecondarydns
-  - kubevirt/ipam-extensions
-  - nmstate/kubernetes-nmstate
-  - k8snetworkplumbingwg/kubemacpool
-  - kubevirt/kubectl-virt-plugin
-  - kubevirt/node-maintenance-operator
-  - kubevirt/ansible-kubevirt-modules
-  - kubevirt/hyperconverged-cluster-operator
-  - kubevirt/common-instancetypes
-  - kubevirt/common-templates
-  - kubevirt/kvm-info-nfd-plugin
-  - kubevirt/cpu-nfd-plugin
-  - kubevirt/node-labeller
-  - kubevirt/kubevirt-template-validator
-  - kubevirt/kubevirt-ssp-operator
-  - kubevirt/ssp-operator
-  - kubevirt/kubevirt-tekton-tasks
-  - kubevirt/must-gather
-  - kubevirt/csi-driver
-  - kubevirt/user-guide
-  - kubevirt/terraform-provider-kubevirt
-  - kubevirt/kubevirt-velero-plugin
-  - kubevirt/qe-tools
-  - kubevirt/cloud-provider-kubevirt
-  - kubevirt/secrets
-  - kubevirt/test-benchmarks
-  - kubevirt/vm-console-proxy
-  - kubevirt/sig-release
-  - kubevirt/kubevirt.core
-  - kubevirt/managed-tenant-quota
-  - kubevirt/application-aware-quota
-  - kubevirt/dra-pci-driver
-  review_acts_as_lgtm: true
-
-override:
-  allow_top_level_owners: true
-
-label:
-  restricted_labels:
-    'kubevirt':
-    - allowed_teams:
-      - kubevirtorg-label
-      label: good-first-issue
-    'kubevirt/kubevirt':
-    - allowed_teams:
-      - kubevirtkubevirt-label
-      label: good-first-issue
-    'kubevirt/project-infra':
-    - allowed_teams:
-      - kubevirtproject-infra-label
-      label: good-first-issue
-
-help:
-  help_guidelines_url: "https://www.github.com/kubevirt/community/tree/main/contributors/help-wanted.md"
-  help_guidelines_summary: |
-    - **No Barrier to Entry**
-    - **Clear Task**
-    - **Solution Explained**
-    - **Provides Context**
-    - **Identifies Relevant Code**
-    - **Gives Examples**
-    - **Ready to Test**
-    - **Goldilocks priority**
-    - **Up-To-Date**
-
-

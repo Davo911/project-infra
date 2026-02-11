@@ -5,7 +5,6 @@ postsubmits:
     - master
     cluster: kubevirt-prow-control-plane
     always_run: true
-    optional: false
     skip_report: true
     annotations:
       testgrid-create-test-group: "false"
@@ -19,7 +18,7 @@ postsubmits:
       preset-kubevirtci-quay-credential: "true"
     spec:
       containers:
-      - image: quay.io/kubevirtci/bootstrap:v20240829-fb5890c
+      - image: quay.io/kubevirtci/bootstrap:v20251218-e7a7fc9
         command:
           - "/usr/local/bin/runner.sh"
           - "/bin/sh"
@@ -39,7 +38,6 @@ postsubmits:
     - ^v\d+\.\d+\.\d+$
     cluster: kubevirt-prow-control-plane
     always_run: true
-    optional: false
     skip_report: true
     annotations:
       testgrid-create-test-group: "false"
@@ -53,7 +51,7 @@ postsubmits:
       preset-kubevirtci-quay-credential: "true"
     spec:
       containers:
-      - image: quay.io/kubevirtci/bootstrap:v20240829-fb5890c
+      - image: quay.io/kubevirtci/bootstrap:v20251218-e7a7fc9
         command:
           - "/usr/local/bin/runner.sh"
           - "/bin/sh"

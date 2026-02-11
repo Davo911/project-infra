@@ -2,7 +2,9 @@ postsubmits:
   kubevirt/project-infra:
     - name: publish-rehearse-image
       always_run: false
-      run_if_changed: "external-plugins/rehearse/.*"
+      branches:
+      - main
+      run_if_changed: "external-plugins/rehearse/.*|pkg/.*|go.mod|go.sum"
       annotations:
         testgrid-create-test-group: "false"
       decorate: true
@@ -12,9 +14,10 @@ postsubmits:
         preset-bazel-cache: "true"
         preset-kubevirtci-quay-credential: "true"
         preset-podman-in-container-enabled: "true"
+        preset-project-infra-image-build-linux: "true"
       spec:
         containers:
-          - image: quay.io/kubevirtci/bootstrap:v20240829-fb5890c
+          - image: quay.io/kubevirtci/bootstrap:v20251218-e7a7fc9
             command:
               - "/usr/local/bin/runner.sh"
               - "/bin/bash"
@@ -31,7 +34,9 @@ postsubmits:
               privileged: true
     - name: publish-phased-plugin-image
       always_run: false
-      run_if_changed: "external-plugins/phased/.*"
+      branches:
+      - main
+      run_if_changed: "external-plugins/phased/.*|pkg/.*|go.mod|go.sum"
       annotations:
         testgrid-create-test-group: "false"
       decorate: true
@@ -41,9 +46,10 @@ postsubmits:
         preset-bazel-cache: "true"
         preset-kubevirtci-quay-credential: "true"
         preset-podman-in-container-enabled: "true"
+        preset-project-infra-image-build-linux: "true"
       spec:
         containers:
-          - image: quay.io/kubevirtci/bootstrap:v20240829-fb5890c
+          - image: quay.io/kubevirtci/bootstrap:v20251218-e7a7fc9
             command:
               - "/usr/local/bin/runner.sh"
               - "/bin/bash"
@@ -58,9 +64,11 @@ postsubmits:
                 memory: "8Gi"
             securityContext:
               privileged: true
-    - name: publish-release-blocker-image
+    - name: publish-test-subset-plugin-image
       always_run: false
-      run_if_changed: "external-plugins/release-blocker/.*"
+      branches:
+      - main
+      run_if_changed: "external-plugins/test-subset/.*|pkg/.*|go.mod|go.sum"
       annotations:
         testgrid-create-test-group: "false"
       decorate: true
@@ -69,24 +77,30 @@ postsubmits:
       labels:
         preset-bazel-cache: "true"
         preset-kubevirtci-quay-credential: "true"
+        preset-podman-in-container-enabled: "true"
+        preset-project-infra-image-build-linux: "true"
       spec:
         containers:
-          - image: quay.io/kubevirtci/bootstrap:v20240829-fb5890c
+          - image: quay.io/kubevirtci/bootstrap:v20251218-e7a7fc9
             command:
               - "/usr/local/bin/runner.sh"
               - "/bin/bash"
               - "-c"
               - |
                 cat "$QUAY_PASSWORD" | podman login --username $(cat "$QUAY_USER") --password-stdin=true quay.io
-                bazelisk run //external-plugins/release-blocker:push
+                make -C external-plugins/test-subset push
             resources:
               requests:
                 memory: "8Gi"
               limits:
                 memory: "8Gi"
-    - name: publish-release-tool-image
+            securityContext:
+              privileged: true
+    - name: publish-release-blocker-image
       always_run: false
-      run_if_changed: "releng/release-tool/.*"
+      branches:
+      - main
+      run_if_changed: "^(external-plugins|images)/release-blocker/.*|pkg/.*|go.mod|go.sum"
       annotations:
         testgrid-create-test-group: "false"
       decorate: true
@@ -95,9 +109,42 @@ postsubmits:
       labels:
         preset-bazel-cache: "true"
         preset-kubevirtci-quay-credential: "true"
+        preset-podman-in-container-enabled: "true"
+        preset-project-infra-image-build-linux: "true"
       spec:
         containers:
-          - image: quay.io/kubevirtci/bootstrap:v20240829-fb5890c
+          - image: quay.io/kubevirtci/bootstrap:v20251218-e7a7fc9
+            command:
+              - "/usr/local/bin/runner.sh"
+              - "/bin/bash"
+              - "-c"
+              - |
+                cat "$QUAY_PASSWORD" | podman login --username $(cat "$QUAY_USER") --password-stdin=true quay.io
+                make -C ./external-plugins/release-blocker push
+            resources:
+              requests:
+                memory: "8Gi"
+              limits:
+                memory: "8Gi"
+            securityContext:
+              privileged: true
+    - name: publish-release-tool-image
+      always_run: false
+      branches:
+      - main
+      run_if_changed: "^(releng|images)/release-tool/.*|pkg/.*|go.mod|go.sum"
+      annotations:
+        testgrid-create-test-group: "false"
+      decorate: true
+      cluster: kubevirt-prow-control-plane
+      max_concurrency: 1
+      labels:
+        preset-bazel-cache: "true"
+        preset-kubevirtci-quay-credential: "true"
+        preset-project-infra-image-build-linux: "true"
+      spec:
+        containers:
+          - image: quay.io/kubevirtci/bootstrap:v20251218-e7a7fc9
             command:
               - "/usr/local/bin/runner.sh"
               - "/bin/bash"
@@ -110,38 +157,13 @@ postsubmits:
                 memory: "8Gi"
               limits:
                 memory: "8Gi"
-    - name: publish-botreview-image
-      always_run: false
-      run_if_changed: "external-plugins/botreview/.*"
-      annotations:
-        testgrid-create-test-group: "false"
-      decorate: true
-      cluster: kubevirt-prow-control-plane
-      max_concurrency: 1
-      labels:
-        preset-bazel-cache: "true"
-        preset-kubevirtci-quay-credential: "true"
-        preset-podman-in-container-enabled: "true"
-      spec:
-        containers:
-          - image: quay.io/kubevirtci/bootstrap:v20240829-fb5890c
-            command:
-              - "/usr/local/bin/runner.sh"
-              - "/bin/bash"
-              - "-c"
-              - |
-                cat "$QUAY_PASSWORD" | podman login --username $(cat "$QUAY_USER") --password-stdin=true quay.io
-                make -C ./external-plugins/botreview push
-            resources:
-              requests:
-                memory: "8Gi"
-              limits:
-                memory: "8Gi"
             securityContext:
               privileged: true
     - name: publish-referee-image
       always_run: false
-      run_if_changed: "^(external-plugins|images)/referee/.*"
+      branches:
+      - main
+      run_if_changed: "^(external-plugins|images)/referee/.*|pkg/.*|go.mod|go.sum"
       annotations:
         testgrid-create-test-group: "false"
       decorate: true
@@ -151,9 +173,10 @@ postsubmits:
         preset-bazel-cache: "true"
         preset-kubevirtci-quay-credential: "true"
         preset-podman-in-container-enabled: "true"
+        preset-project-infra-image-build-linux: "true"
       spec:
         containers:
-          - image: quay.io/kubevirtci/bootstrap:v20240829-fb5890c
+          - image: quay.io/kubevirtci/bootstrap:v20251218-e7a7fc9
             command:
               - "/usr/local/bin/runner.sh"
               - "/bin/bash"
@@ -168,8 +191,72 @@ postsubmits:
                 memory: "8Gi"
             securityContext:
               privileged: true
+    - name: publish-flakefinder-image
+      always_run: false
+      run_if_changed: "^(robots|images)/flakefinder/.*|pkg/.*|go.mod|go.sum"
+      annotations:
+        testgrid-create-test-group: "false"
+      decorate: true
+      cluster: kubevirt-prow-control-plane
+      max_concurrency: 1
+      labels:
+        preset-bazel-cache: "true"
+        preset-kubevirtci-quay-credential: "true"
+        preset-podman-in-container-enabled: "true"
+        preset-project-infra-image-build-linux: "true"
+      spec:
+        containers:
+          - image: quay.io/kubevirtci/bootstrap:v20251218-e7a7fc9
+            command:
+              - "/usr/local/bin/runner.sh"
+              - "/bin/bash"
+              - "-c"
+              - |
+                cat "$QUAY_PASSWORD" | podman login --username $(cat "$QUAY_USER") --password-stdin=true quay.io
+                cd images
+                ./publish_image.sh -e flakefinder quay.io kubevirtci
+            resources:
+              requests:
+                memory: "1Gi"
+              limits:
+                memory: "1Gi"
+            securityContext:
+              privileged: true
+    - name: publish-ginkgo-tests-image
+      always_run: false
+      run_if_changed: "^(robots|images)/ginkgo-tests/.*|pkg/.*|go.mod|go.sum"
+      annotations:
+        testgrid-create-test-group: "false"
+      decorate: true
+      cluster: kubevirt-prow-control-plane
+      max_concurrency: 1
+      labels:
+        preset-bazel-cache: "true"
+        preset-kubevirtci-quay-credential: "true"
+        preset-podman-in-container-enabled: "true"
+        preset-project-infra-image-build-linux: "true"
+      spec:
+        containers:
+          - image: quay.io/kubevirtci/bootstrap:v20251218-e7a7fc9
+            command:
+              - "/usr/local/bin/runner.sh"
+              - "/bin/bash"
+              - "-c"
+              - |
+                cat "$QUAY_PASSWORD" | podman login --username $(cat "$QUAY_USER") --password-stdin=true quay.io
+                cd images
+                ./publish_image.sh -e ginkgo-tests quay.io kubevirtci
+            resources:
+              requests:
+                memory: "1Gi"
+              limits:
+                memory: "1Gi"
+            securityContext:
+              privileged: true
     - name: publish-kubevirt-infra-bootstrap-image
       always_run: false
+      branches:
+      - main
       run_if_changed: "images/kubevirt-infra-bootstrap/.*"
       annotations:
         testgrid-create-test-group: "false"
@@ -182,7 +269,7 @@ postsubmits:
       cluster: kubevirt-prow-control-plane
       spec:
         containers:
-          - image: quay.io/kubevirtci/bootstrap:v20240829-fb5890c
+          - image: quay.io/kubevirtci/bootstrap:v20251218-e7a7fc9
             command:
               - "/usr/local/bin/runner.sh"
               - "/bin/bash"
@@ -200,6 +287,8 @@ postsubmits:
                 memory: "1Gi"
     - name: publish-bootstrap-image
       always_run: false
+      branches:
+      - main
       run_if_changed: "images/golang/.*|images/bootstrap/.*"
       annotations:
         testgrid-create-test-group: "false"
@@ -211,13 +300,14 @@ postsubmits:
       labels:
         preset-podman-in-container-enabled: "true"
         preset-kubevirtci-quay-credential: "true"
-      cluster: kubevirt-prow-workloads
+      cluster: prow-workloads
       spec:
         containers:
-          - image: quay.io/kubevirtci/bootstrap:v20240829-fb5890c
+          - image: quay.io/kubevirtci/bootstrap:v20251218-e7a7fc9
             command:
               - "/usr/local/bin/runner.sh"
               - "/bin/bash"
+              - "-e"
               - "-c"
               - |
                 cat "$QUAY_PASSWORD" | podman login --username $(cat "$QUAY_USER") --password-stdin=true quay.io
@@ -228,44 +318,13 @@ postsubmits:
               privileged: true
             resources:
               requests:
-                memory: "29Gi"
+                memory: "52Gi"
               limits:
-                memory: "29Gi"
-    - name: publish-bootstrap-legacy-images
-      always_run: false
-      run_if_changed: "images/golang-legacy/.*|images/bootstrap-legacy/.*"
-      annotations:
-        testgrid-create-test-group: "false"
-      decorate: true
-      decoration_config:
-        grace_period: 5m0s
-        timeout: 5h0m0s
-      max_concurrency: 1
-      labels:
-        preset-podman-in-container-enabled: "true"
-        preset-kubevirtci-quay-credential: "true"
-      cluster: kubevirt-prow-workloads
-      spec:
-        containers:
-          - image: quay.io/kubevirtci/bootstrap:v20240829-fb5890c
-            command:
-              - "/usr/local/bin/runner.sh"
-              - "/bin/bash"
-              - "-c"
-              - |
-                cat "$QUAY_PASSWORD" | podman login --username $(cat "$QUAY_USER") --password-stdin=true quay.io
-                cd images
-                ./publish_multiarch_image.sh bootstrap-legacy quay.io kubevirtci
-                ./publish_multiarch_image.sh -l golang-legacy quay.io kubevirtci
-            securityContext:
-              privileged: true
-            resources:
-              requests:
-                memory: "29Gi"
-              limits:
-                memory: "29Gi"
+                memory: "52Gi"
     - name: publish-shared-images-controller-image
       always_run: false
+      branches:
+      - main
       run_if_changed: "images/shared-images-controller/.*"
       annotations:
         testgrid-create-test-group: "false"
@@ -277,7 +336,7 @@ postsubmits:
       cluster: kubevirt-prow-control-plane
       spec:
         containers:
-          - image: quay.io/kubevirtci/bootstrap:v20240829-fb5890c
+          - image: quay.io/kubevirtci/bootstrap:v20251218-e7a7fc9
             command:
               - "/usr/local/bin/runner.sh"
               - "/bin/bash"
@@ -295,6 +354,8 @@ postsubmits:
                 memory: "4Gi"
     - name: publish-kubekins-e2e-image
       always_run: false
+      branches:
+      - main
       run_if_changed: "images/kubekins-e2e/.*"
       annotations:
         testgrid-create-test-group: "false"
@@ -307,7 +368,7 @@ postsubmits:
       cluster: kubevirt-prow-control-plane
       spec:
         containers:
-          - image: quay.io/kubevirtci/bootstrap:v20240829-fb5890c
+          - image: quay.io/kubevirtci/bootstrap:v20251218-e7a7fc9
             command:
               - "/usr/local/bin/runner.sh"
               - "/bin/bash"
@@ -325,6 +386,8 @@ postsubmits:
                 memory: "1Gi"
     - name: publish-kubevirt-kubevirt.github.io-image
       always_run: false
+      branches:
+      - main
       run_if_changed: "images/kubevirt-kubevirt.github.io/.*"
       annotations:
         testgrid-create-test-group: "false"
@@ -341,7 +404,7 @@ postsubmits:
         base_ref: main
       spec:
         containers:
-          - image: quay.io/kubevirtci/bootstrap:v20240829-fb5890c
+          - image: quay.io/kubevirtci/bootstrap:v20251218-e7a7fc9
             command:
               - "/usr/local/bin/runner.sh"
               - "/bin/bash"
@@ -360,19 +423,21 @@ postsubmits:
                 memory: "1Gi"
     - name: publish-kubevirt-user-guide-image
       always_run: false
+      branches:
+      - main
       run_if_changed: "images/kubevirt-user-guide/.*"
       annotations:
         testgrid-create-test-group: "false"
       decorate: true
       max_concurrency: 1
       labels:
-        preset-dind-enabled: "true"
+        preset-podman-in-container-enabled: "true"
         preset-docker-mirror-proxy: "true"
         preset-kubevirtci-quay-credential: "true"
       cluster: kubevirt-prow-control-plane
       spec:
         containers:
-          - image: quay.io/kubevirtci/bootstrap:v20240829-fb5890c
+          - image: quay.io/kubevirtci/bootstrap:v20251218-e7a7fc9
             command:
               - "/usr/local/bin/runner.sh"
               - "/bin/bash"
@@ -390,6 +455,8 @@ postsubmits:
                 memory: "1Gi"
     - name: publish-prow-deploy-image
       always_run: false
+      branches:
+      - main
       run_if_changed: "images/prow-deploy/.*"
       annotations:
         testgrid-create-test-group: "false"
@@ -401,7 +468,7 @@ postsubmits:
       cluster: kubevirt-prow-control-plane
       spec:
         containers:
-          - image: quay.io/kubevirtci/bootstrap:v20240829-fb5890c
+          - image: quay.io/kubevirtci/bootstrap:v20251218-e7a7fc9
             command:
               - "/usr/local/bin/runner.sh"
               - "/bin/bash"
@@ -419,6 +486,8 @@ postsubmits:
                 memory: "8Gi"
     - name: publish-autoowners-image
       always_run: false
+      branches:
+      - main
       run_if_changed: "images/autoowners/.*"
       annotations:
         testgrid-create-test-group: "false"
@@ -427,10 +496,10 @@ postsubmits:
       labels:
         preset-podman-in-container-enabled: "true"
         preset-kubevirtci-quay-credential: "true"
-      cluster: kubevirt-prow-workloads
+      cluster: prow-workloads
       spec:
         containers:
-          - image: quay.io/kubevirtci/bootstrap:v20240829-fb5890c
+          - image: quay.io/kubevirtci/bootstrap:v20251218-e7a7fc9
             command:
               - "/usr/local/bin/runner.sh"
               - "/bin/bash"
@@ -448,7 +517,9 @@ postsubmits:
                 memory: "4Gi"
     - name: publish-pr-creator-image
       always_run: false
-      run_if_changed: "images/pr-creator/.*"
+      branches:
+      - main
+      run_if_changed: 'images/pr-creator/.*|hack/(git-pr\.sh|git-askpass\.sh)|robots/labels-checker/.*|pkg/.*|go.mod|go.sum'
       annotations:
         testgrid-create-test-group: "false"
       decorate: true
@@ -456,10 +527,10 @@ postsubmits:
       labels:
         preset-podman-in-container-enabled: "true"
         preset-kubevirtci-quay-credential: "true"
-      cluster: kubevirt-prow-workloads
+      cluster: prow-workloads
       spec:
         containers:
-          - image: quay.io/kubevirtci/bootstrap:v20240829-fb5890c
+          - image: quay.io/kubevirtci/bootstrap:v20251218-e7a7fc9
             command:
               - "/usr/local/bin/runner.sh"
               - "/bin/bash"
@@ -467,18 +538,18 @@ postsubmits:
               - |
                 cat "$QUAY_PASSWORD" | podman login --username $(cat "$QUAY_USER") --password-stdin=true quay.io
                 cd images
-                ./publish_image.sh pr-creator quay.io kubevirtci
+                ./publish_multiarch_image.sh pr-creator quay.io kubevirtci
             securityContext:
               privileged: true
             resources:
               requests:
-                memory: "16Gi"
-                cpu: "500m"
+                memory: "52Gi"
               limits:
-                memory: "16Gi"
-                cpu: "500m"
+                memory: "52Gi"
     - name: publish-vm-image-builder-image
       always_run: false
+      branches:
+      - main
       run_if_changed: "images/vm-image-builder/.*"
       annotations:
         testgrid-create-test-group: "false"
@@ -490,10 +561,10 @@ postsubmits:
       labels:
         preset-podman-in-container-enabled: "true"
         preset-kubevirtci-quay-credential: "true"
-      cluster: kubevirt-prow-workloads
+      cluster: prow-workloads
       spec:
         containers:
-          - image: quay.io/kubevirtci/bootstrap:v20240829-fb5890c
+          - image: quay.io/kubevirtci/bootstrap:v20251218-e7a7fc9
             command:
               - "/usr/local/bin/runner.sh"
               - "/bin/bash"
@@ -506,11 +577,13 @@ postsubmits:
               privileged: true
             resources:
               requests:
-                memory: "29Gi"
+                memory: "52Gi"
               limits:
-                memory: "29Gi"
+                memory: "52Gi"
     - name: publish-fedora-coreos-kubevirt-image
       always_run: false
+      branches:
+      - main
       run_if_changed: "images/fedora-coreos-kubevirt/.*"
       annotations:
         testgrid-create-test-group: "false"
@@ -522,7 +595,7 @@ postsubmits:
       cluster: kubevirt-prow-control-plane
       spec:
         containers:
-          - image: quay.io/kubevirtci/bootstrap:v20240829-fb5890c
+          - image: quay.io/kubevirtci/bootstrap:v20251218-e7a7fc9
             command:
               - "/usr/local/bin/runner.sh"
               - "/bin/bash"
@@ -558,7 +631,7 @@ postsubmits:
         securityContext:
           runAsUser: 0
         containers:
-        - image: quay.io/kubevirtci/prow-deploy:v20231116-40070ee
+        - image: quay.io/kubevirtci/prow-deploy:v20260128-84f963a
           env:
           - name: DEPLOY_ENVIRONMENT
             value: kubevirt-prow-control-plane
@@ -572,9 +645,9 @@ postsubmits:
               memory: "8Gi"
             limits:
               memory: "8Gi"
-    - name: post-project-infra-kubevirt-prow-workloads-deployment
+    - name: post-project-infra-prow-workloads-deployment
       always_run: false
-      run_if_changed: "github/ci/prow-deploy/kustom/overlays/kubevirt-prow-workloads/.*|github/ci/prow-deploy/kustom/components/.*"
+      run_if_changed: "github/ci/prow-deploy/kustom/overlays/prow-workloads/.*|github/ci/prow-deploy/kustom/components/.*"
       annotations:
         testgrid-create-test-group: "false"
       decorate: true
@@ -591,10 +664,10 @@ postsubmits:
         securityContext:
           runAsUser: 0
         containers:
-        - image: quay.io/kubevirtci/prow-deploy:v20231116-40070ee
+        - image: quay.io/kubevirtci/prow-deploy:v20260128-84f963a
           env:
           - name: DEPLOY_ENVIRONMENT
-            value: kubevirt-prow-workloads
+            value: prow-workloads
           command:
             - "/usr/local/bin/runner.sh"
             - "/bin/bash"
@@ -622,7 +695,7 @@ postsubmits:
         securityContext:
           runAsUser: 0
         containers:
-        - image: quay.io/kubevirtci/bootstrap:v20240829-fb5890c
+        - image: quay.io/kubevirtci/golang:v20251218-e7a7fc9
           command:
             - "/usr/local/bin/runner.sh"
             - "/bin/bash"
@@ -635,7 +708,7 @@ postsubmits:
               source ./hack/manage-secrets.sh
               decrypt_secrets
               extract_secret 'kubeconfig' ~/.kube/config
-              extract_secret 'bugzilla.apiKey' github/ci/services/ci-search/secrets/production/bugzilla-credentials/api
+              extract_secret 'bugzilla.apiKey' github/ci/services/ci-search/overlays/production/secrets/bugzilla-credentials
 
               ./github/ci/services/ci-search/hack/deploy.sh production
           resources:
@@ -660,8 +733,7 @@ postsubmits:
         securityContext:
           runAsUser: 0
         containers:
-        - image: quay.io/kubevirtci/bootstrap:v20240829-fb5890c
-          command:
+        - command:
             - "/usr/local/bin/runner.sh"
             - "/bin/bash"
             - "-c"
@@ -673,13 +745,20 @@ postsubmits:
               source ./hack/manage-secrets.sh
               decrypt_secrets
               extract_secret 'kubeconfig' ~/.kube/config
-              extract_secret 'grafanaUser' github/ci/services/grafana/secrets/kubevirt-prow-control-plane/grafana/admin-user
-              extract_secret 'grafanaPassword' github/ci/services/grafana/secrets/kubevirt-prow-control-plane/grafana/admin-password
-              extract_secret 'grafanaPromToken' github/ci/services/grafana/secrets/kubevirt-prow-control-plane/grafana/prom_bearer_token
-              extract_secret 'grafanaClientID' github/ci/services/grafana/secrets/kubevirt-prow-control-plane/grafana/client-id
-              extract_secret 'grafanaClientSecret' github/ci/services/grafana/secrets/kubevirt-prow-control-plane/grafana/client-secret
 
-              ./github/ci/services/grafana/hack/deploy.sh kubevirt-prow-control-plane
+              environment='kubevirt-prow-control-plane'
+              overlaySecretsDirectory="github/ci/services/grafana/deploy/overlays/kubevirt-prow-control-plane/secrets/grafana"
+              extract_secret 'grafanaUser' "${overlaySecretsDirectory}/admin-user"
+              extract_secret 'grafanaPassword' "${overlaySecretsDirectory}/admin-password"
+              extract_secret 'grafanaPromToken' "${overlaySecretsDirectory}/prom_bearer_token"
+              extract_secret 'grafanaClientID' "${overlaySecretsDirectory}/client-id"
+              extract_secret 'grafanaClientSecret' "${overlaySecretsDirectory}/client-secret"
+
+              ./github/ci/services/grafana/hack/deploy.sh "${environment}"
+          env:
+          - name: GIMME_GO_VERSION
+            value: "1.25.1"
+          image: quay.io/kubevirtci/golang:v20251218-e7a7fc9
           resources:
             requests:
               memory: "8Gi"
@@ -713,33 +792,39 @@ postsubmits:
               memory: "1Gi"
     - name: publish-ci-usage-exporter-image
       always_run: false
-      run_if_changed: "robots/.*/ci-usage-exporter/.*"
+      run_if_changed: "^(robots|images)/ci-usage-exporter/.*|pkg/.*|go.mod|go.sum"
       annotations:
         testgrid-create-test-group: "false"
       decorate: true
       cluster: kubevirt-prow-control-plane
       max_concurrency: 1
       labels:
-        preset-kubevirtci-quay-credential: "true"
         preset-bazel-cache: "true"
+        preset-kubevirtci-quay-credential: "true"
+        preset-podman-in-container-enabled: "true"
       spec:
         containers:
-          - image: quay.io/kubevirtci/bootstrap:v20240829-fb5890c
+          - image: quay.io/kubevirtci/bootstrap:v20251218-e7a7fc9
             command:
               - "/usr/local/bin/runner.sh"
               - "/bin/bash"
               - "-c"
               - |
                 cat "$QUAY_PASSWORD" | podman login --username $(cat "$QUAY_USER") --password-stdin=true quay.io
-                bazelisk run //robots/cmd/ci-usage-exporter:push
+                cd images
+                ./publish_image.sh ci-usage-exporter quay.io kubevirtci
             resources:
               requests:
                 memory: "8Gi"
               limits:
                 memory: "8Gi"
+            securityContext:
+              privileged: true
     - name: publish-test-report-image
       always_run: false
-      run_if_changed: "robots/.*/test-report/.*"
+      branches:
+      - main
+      run_if_changed: "^(robots|images)/test-report/.*|pkg/.*|go.mod|go.sum"
       annotations:
         testgrid-create-test-group: "false"
       decorate: true
@@ -749,16 +834,17 @@ postsubmits:
         preset-podman-in-container-enabled: "true"
         preset-kubevirtci-quay-credential: "true"
         preset-bazel-cache: "true"
+        preset-project-infra-image-build-linux: "true"
       spec:
         containers:
-          - image: quay.io/kubevirtci/bootstrap:v20240829-fb5890c
+          - image: quay.io/kubevirtci/bootstrap:v20251218-e7a7fc9
             command:
               - "/usr/local/bin/runner.sh"
               - "/bin/bash"
               - "-c"
               - |
                 cat "$QUAY_PASSWORD" | podman login --username $(cat "$QUAY_USER") --password-stdin=true quay.io
-                make -C ./robots/cmd/test-report push
+                make -C ./robots/test-report push
             securityContext:
               privileged: true
             resources:
@@ -768,7 +854,9 @@ postsubmits:
                 memory: "8Gi"
     - name: publish-test-label-analyzer-image
       always_run: false
-      run_if_changed: "images/test-label-analyzer/.*|robots/.*/test-label-analyzer/.*"
+      branches:
+      - main
+      run_if_changed: "^(robots|images)/test-label-analyzer/.*|pkg/.*|go.mod|go.sum"
       annotations:
         testgrid-create-test-group: "false"
       decorate: true
@@ -778,17 +866,18 @@ postsubmits:
         preset-podman-in-container-enabled: "true"
         preset-kubevirtci-quay-credential: "true"
         preset-bazel-cache: "true"
+        preset-project-infra-image-build-linux: "true"
       spec:
         containers:
-          - image: quay.io/kubevirtci/bootstrap:v20240829-fb5890c
+          - image: quay.io/kubevirtci/bootstrap:v20251218-e7a7fc9
             command:
               - "/usr/local/bin/runner.sh"
               - "/bin/bash"
               - "-c"
               - |
-                cat "$QUAY_PASSWORD" | docker login --username $(cat "$QUAY_USER") --password-stdin=true quay.io
+                cat "$QUAY_PASSWORD" | podman login --username $(cat "$QUAY_USER") --password-stdin=true quay.io
                 cd images
-                ./publish_image.sh test-label-analyzer quay.io kubevirtci
+                ./publish_image.sh -e test-label-analyzer quay.io kubevirtci
             securityContext:
               privileged: true
             resources:
@@ -808,7 +897,7 @@ postsubmits:
         preset-docker-mirror-proxy: "true"
       spec:
         containers:
-        - image: quay.io/kubevirtci/bootstrap:v20240829-fb5890c
+        - image: quay.io/kubevirtci/bootstrap:v20251218-e7a7fc9
           command: ["/bin/sh"]
           args:
           - -c
@@ -841,28 +930,90 @@ postsubmits:
         securityContext:
           runAsUser: 0
         containers:
-        - image: quay.io/kubevirtci/golang:v20240829-fb5890c
+        - image: quay.io/kubevirtci/golang:v20251218-e7a7fc9
           env:
           - name: GIMME_GO_VERSION
-            value: "1.21.6"
+            value: "1.25.1"
+          command:
+          - /usr/local/bin/runner.sh
+          - /bin/sh
+          - -ce
+          args:
+          - |
+            # we create presubmit documents for kubevirt/kubevirt branches main and latest three release branches
+            go run ./robots/kubevirt/... get presubmits \
+              --job-config-path-kubevirt-presubmits $(pwd)/github/ci/prow-deploy/files/jobs/kubevirt/kubevirt/kubevirt-presubmits.yaml \
+              --github-token-path '' \
+              --output-file /tmp/presubmits.html
+
+            for release_branch_config in $(find $(pwd)/github/ci/prow-deploy/files/jobs/kubevirt/kubevirt/ -name 'kubevirt-presubmits-*.yaml' | sort -r | head -3); do
+              release_branch="$( echo "${release_branch_config}" | sed -E 's/.*kubevirt-presubmits-([0-9]+\.[0-9]+)\.yaml/\1/' )"
+              go run ./robots/kubevirt/... get presubmits \
+                --job-config-path-kubevirt-presubmits "${release_branch_config}" \
+                --github-token-path '' \
+                --output-file "/tmp/presubmits-${release_branch}.html"
+            done
+
+            go run ./robots/kubevirt/... get periodics \
+              --job-config-path-kubevirt-periodics $(pwd)/github/ci/prow-deploy/files/jobs/kubevirt/kubevirt/kubevirt-periodics.yaml \
+              --github-token-path '' \
+              --output-file /tmp/periodics.html
+
+            gsutil cp /tmp/presubmits*.html /tmp/periodics.html gs://kubevirt-prow/reports/e2ejobs/kubevirt/kubevirt
+          resources:
+            requests:
+              memory: "200Mi"
+    - name: post-project-infra-kubevirt-releasegraph
+      always_run: false
+      annotations:
+        testgrid-create-test-group: "false"
+      cluster: kubevirt-prow-control-plane
+      decorate: true
+      labels:
+        preset-github-credentials: "true"
+      run_if_changed: "robots/perf-report-creator/shape.yaml"
+      spec:
+        containers:
+        - image: quay.io/kubevirtci/pr-creator:v20260128-84f963a
+          env:
+          - name: TARGET_GITHUB_REPO
+            value: kubevirt/ci-performance-benchmarks
+          - name: GITHUB_TOKEN_PATH
+            value: /etc/github/oauth
           command:
           - /usr/local/bin/runner.sh
           - /bin/sh
           - -c
           args:
           - |
-            # we fetch presubmits for kubevirt/kubevirt branches main and latest three release branches
-            go run ./robots/cmd/kubevirt/... get presubmits \
-              --job-config-path-kubevirt-presubmits $(pwd)/github/ci/prow-deploy/files/jobs/kubevirt/kubevirt/kubevirt-presubmits.yaml \
-              $(for release_branch_config in $(find $(pwd)/github/ci/prow-deploy/files/jobs/kubevirt/kubevirt/ -name 'kubevirt-presubmits-*.yaml' | sort -r | head -3); do echo -n "--job-config-path-kubevirt-presubmits $release_branch_config "; done) \
-              --github-token-path '' \
-              --output-file /tmp/presubmits.html
-            go run ./robots/cmd/kubevirt/... get periodics \
-              --job-config-path-kubevirt-periodics $(pwd)/github/ci/prow-deploy/files/jobs/kubevirt/kubevirt/kubevirt-periodics.yaml \
-              --github-token-path '' \
-              --output-file /tmp/periodics.html
-            gsutil cp /tmp/presubmits.html /tmp/periodics.html gs://kubevirt-prow/reports/e2ejobs/kubevirt/kubevirt
+            go build -o /usr/local/bin/perf-report-creator ./robots/perf-report-creator/...
+
+            RELEASE_VERSION=$(grep "releaseVersion:" robots/perf-report-creator/shape.yaml | awk '{print $2}' | tr -d '"')
+            BRANCH="add-$RELEASE_VERSION"
+            RELEASE_DIR="release-$RELEASE_VERSION"
+
+            (
+              cd ..
+              git clone "https://kubevirt-bot@github.com/$TARGET_GITHUB_REPO.git"
+              cd ci-performance-benchmarks
+              git checkout -b $BRANCH
+            )
+            CI_PERF_REPO_DIR=$(cd ../ci-performance-benchmarks && pwd)
+
+            robots/perf-report-creator/release-graph.sh "$CI_PERF_REPO_DIR"
+
+            cd "$CI_PERF_REPO_DIR"
+            mkdir -p "$CI_PERF_REPO_DIR"/$RELEASE_DIR/periodic-kubevirt-e2e-k8s-sig-performance
+            mkdir -p "$CI_PERF_REPO_DIR"/$RELEASE_DIR/periodic-kubevirt-e2e-k8s-sig-performance/vmi "$CI_PERF_REPO_DIR"/$RELEASE_DIR/periodic-kubevirt-e2e-k8s-sig-performance/vm
+            mv "$CI_PERF_REPO_DIR"/weekly/vmi/release-index.html "$CI_PERF_REPO_DIR"/$RELEASE_DIR/periodic-kubevirt-e2e-k8s-sig-performance/vmi
+            mv "$CI_PERF_REPO_DIR"/weekly/vm/release-index.html "$CI_PERF_REPO_DIR"/$RELEASE_DIR/periodic-kubevirt-e2e-k8s-sig-performance/vm
+
+            git-pr.sh -c "git clean -fd weekly && git add $RELEASE_DIR" -T main -r ci-performance-benchmarks -m "$CI_PERF_REPO_DIR" -b $BRANCH -d "echo 'Add release $RELEASE_VERSION performance benchmarks data'" -B "Add release $RELEASE_VERSION performance benchmarks data via automation"
+
+            echo "PR created successfully"
+            echo "Process completed successfully."
           resources:
             requests:
-              memory: "200Mi"
-
+              memory: "1Gi"
+            limits:
+              memory: "1Gi"

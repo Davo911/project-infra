@@ -5,12 +5,12 @@ presubmits:
   - always_run: false
     branches:
     - release-1.2
-    cluster: kubevirt-prow-workloads
+    cluster: prow-workloads
     context: pull-kubevirt-e2e-k8s-1.27-sig-performance
     decorate: true
     decoration_config:
       grace_period: 5m0s
-      timeout: 1h0m0s
+      timeout: 2h0m0s
     labels:
       preset-bazel-unnested: "true"
       preset-docker-mirror-proxy: "true"
@@ -63,7 +63,7 @@ presubmits:
   - always_run: true
     branches:
     - release-1.2
-    cluster: kubevirt-prow-workloads
+    cluster: prow-workloads
     context: pull-kubevirt-e2e-windows2016
     decorate: true
     decoration_config:
@@ -94,7 +94,7 @@ presubmits:
         name: ""
         resources:
           requests:
-            memory: 29Gi
+            memory: 52Gi
         securityContext:
           privileged: true
       nodeSelector:
@@ -103,7 +103,7 @@ presubmits:
   - always_run: true
     branches:
     - release-1.2
-    cluster: kubevirt-prow-workloads
+    cluster: prow-workloads
     context: pull-kubevirt-e2e-kind-1.27-vgpu
     decorate: true
     decoration_config:
@@ -127,7 +127,6 @@ presubmits:
                 values:
                 - "true"
             topologyKey: kubernetes.io/hostname
-            weight: 100
       containers:
       - command:
         - /usr/local/bin/runner.sh
@@ -139,7 +138,7 @@ presubmits:
         env:
         - name: TARGET
           value: kind-1.27-vgpu
-        image: quay.io/kubevirtci/bootstrap:v20240118-315742b
+        image: quay.io/kubevirtci/bootstrap:v20241121-ac63e76
         name: ""
         resources:
           requests:
@@ -174,7 +173,7 @@ presubmits:
       k8s.v1.cni.cncf.io/networks: default/sriov-passthrough-cni,default/sriov-passthrough-cni
     branches:
     - release-1.2
-    cluster: kubevirt-prow-workloads
+    cluster: prow-workloads
     context: pull-kubevirt-e2e-kind-sriov
     decorate: true
     decoration_config:
@@ -220,7 +219,7 @@ presubmits:
         name: ""
         resources:
           requests:
-            memory: 29Gi
+            memory: 52Gi
         securityContext:
           privileged: true
         volumeMounts:
@@ -250,7 +249,7 @@ presubmits:
   - always_run: true
     branches:
     - release-1.2
-    cluster: kubevirt-prow-workloads
+    cluster: prow-workloads
     context: pull-kubevirt-check-tests-for-flakes
     decorate: true
     decoration_config:
@@ -282,7 +281,7 @@ presubmits:
         name: ""
         resources:
           requests:
-            memory: 29Gi
+            memory: 52Gi
         securityContext:
           privileged: true
       nodeSelector:
@@ -400,7 +399,7 @@ presubmits:
   - always_run: true
     branches:
     - release-1.2
-    cluster: prow-arm64-workloads-2
+    cluster: prow-arm64-workloads
     context: pull-kubevirt-unit-test-arm64
     decorate: true
     decoration_config:
@@ -427,7 +426,7 @@ presubmits:
   - always_run: true
     branches:
     - release-1.2
-    cluster: kubevirt-prow-workloads
+    cluster: prow-workloads
     context: pull-kubevirt-build
     decorate: true
     decoration_config:
@@ -454,7 +453,7 @@ presubmits:
   - always_run: true
     branches:
     - release-1.2
-    cluster: kubevirt-prow-workloads
+    cluster: prow-workloads
     context: pull-kubevirt-build-arm64
     decorate: true
     decoration_config:
@@ -484,7 +483,7 @@ presubmits:
   - always_run: false
     branches:
     - release-1.2
-    cluster: kubevirt-prow-workloads
+    cluster: prow-workloads
     context: pull-kubevirt-build-s390x
     decorate: true
     decoration_config:
@@ -674,7 +673,7 @@ presubmits:
   - always_run: true
     branches:
     - release-1.2
-    cluster: kubevirt-prow-workloads
+    cluster: prow-workloads
     context: pull-kubevirt-e2e-k8s-1.29-ipv6-sig-network
     decorate: true
     decoration_config:
@@ -706,7 +705,7 @@ presubmits:
         name: ""
         resources:
           requests:
-            memory: 29Gi
+            memory: 52Gi
         securityContext:
           privileged: true
       nodeSelector:
@@ -714,7 +713,7 @@ presubmits:
   - always_run: false
     branches:
     - release-1.2
-    cluster: kubevirt-prow-workloads
+    cluster: prow-workloads
     context: pull-kubevirt-e2e-k8s-1.29-sig-network-multus-v4
     decorate: true
     decoration_config:
@@ -748,7 +747,7 @@ presubmits:
         name: ""
         resources:
           requests:
-            memory: 29Gi
+            memory: 52Gi
         securityContext:
           privileged: true
       nodeSelector:
@@ -756,7 +755,7 @@ presubmits:
   - always_run: true
     branches:
     - release-1.2
-    cluster: kubevirt-prow-workloads
+    cluster: prow-workloads
     context: pull-kubevirt-e2e-k8s-1.29-sig-compute-migrations
     decorate: true
     decoration_config:
@@ -790,7 +789,7 @@ presubmits:
         name: ""
         resources:
           requests:
-            memory: 29Gi
+            memory: 52Gi
         securityContext:
           privileged: true
       nodeSelector:
@@ -807,7 +806,7 @@ presubmits:
     labels:
       preset-bazel-unnested: "false"
       preset-podman-in-container-enabled: "true"
-    max_concurrency: 5
+    max_concurrency: 1
     name: pull-kubevirt-e2e-arm64-1.2
     optional: true
     spec:
@@ -829,7 +828,7 @@ presubmits:
         name: ""
         resources:
           requests:
-            memory: 16Gi
+            memory: 52Gi
         securityContext:
           privileged: true
         volumeMounts:
@@ -849,7 +848,7 @@ presubmits:
   - always_run: true
     branches:
     - release-1.2
-    cluster: prow-arm64-workloads-2
+    cluster: prow-arm64-workloads
     context: pull-kubevirt-conformance-arm64
     decorate: true
     decoration_config:
@@ -858,7 +857,7 @@ presubmits:
     labels:
       preset-bazel-unnested: "false"
       preset-dind-enabled: "true"
-    max_concurrency: 4
+    max_concurrency: 1
     name: pull-kubevirt-conformance-arm64-1.2
     optional: true
     skip_report: true
@@ -885,7 +884,7 @@ presubmits:
         name: ""
         resources:
           requests:
-            memory: 29Gi
+            memory: 52Gi
         securityContext:
           privileged: true
         volumeMounts:
@@ -916,7 +915,7 @@ presubmits:
   - always_run: false
     branches:
     - release-1.2
-    cluster: kubevirt-prow-workloads
+    cluster: prow-workloads
     context: build-kubevirt-builder
     decorate: true
     decoration_config:
@@ -940,7 +939,7 @@ presubmits:
         name: ""
         resources:
           requests:
-            memory: 29Gi
+            memory: 52Gi
         securityContext:
           privileged: true
   - always_run: true
@@ -975,7 +974,7 @@ presubmits:
   - always_run: false
     branches:
     - release-1.2
-    cluster: kubevirt-prow-workloads
+    cluster: prow-workloads
     context: pull-kubevirt-e2e-k8s-1.29-swap-enabled
     decorate: true
     decoration_config:
@@ -1008,7 +1007,7 @@ presubmits:
         name: ""
         resources:
           requests:
-            memory: 29Gi
+            memory: 52Gi
         securityContext:
           privileged: true
       nodeSelector:
@@ -1016,7 +1015,7 @@ presubmits:
   - always_run: false
     branches:
     - release-1.2
-    cluster: kubevirt-prow-workloads
+    cluster: prow-workloads
     context: pull-kubevirt-e2e-k8s-1.29-sig-monitoring
     decorate: true
     decoration_config:
@@ -1046,13 +1045,13 @@ presubmits:
         name: ""
         resources:
           requests:
-            memory: 29Gi
+            memory: 52Gi
         securityContext:
           privileged: true
   - always_run: false
     branches:
     - release-1.2
-    cluster: kubevirt-prow-workloads
+    cluster: prow-workloads
     context: pull-kubevirt-e2e-k8s-1.29-single-node
     decorate: true
     decoration_config:
@@ -1099,7 +1098,7 @@ presubmits:
   - always_run: false
     branches:
     - release-1.2
-    cluster: kubevirt-prow-workloads
+    cluster: prow-workloads
     context: pull-kubevirt-e2e-k8s-1.29-sig-storage-root
     decorate: true
     decoration_config:
@@ -1130,7 +1129,7 @@ presubmits:
         name: ""
         resources:
           requests:
-            memory: 29Gi
+            memory: 52Gi
         securityContext:
           privileged: true
       nodeSelector:
@@ -1138,7 +1137,7 @@ presubmits:
   - always_run: false
     branches:
     - release-1.2
-    cluster: kubevirt-prow-workloads
+    cluster: prow-workloads
     context: pull-kubevirt-e2e-k8s-1.29-sig-compute-root
     decorate: true
     decoration_config:
@@ -1173,7 +1172,7 @@ presubmits:
         name: ""
         resources:
           requests:
-            memory: 29Gi
+            memory: 52Gi
         securityContext:
           privileged: true
       nodeSelector:
@@ -1181,7 +1180,7 @@ presubmits:
   - always_run: true
     branches:
     - release-1.2
-    cluster: kubevirt-prow-workloads
+    cluster: prow-workloads
     context: pull-kubevirt-e2e-k8s-1.27-sig-network
     decorate: true
     decoration_config:
@@ -1213,7 +1212,7 @@ presubmits:
         name: ""
         resources:
           requests:
-            memory: 29Gi
+            memory: 52Gi
         securityContext:
           privileged: true
       nodeSelector:
@@ -1221,7 +1220,7 @@ presubmits:
   - always_run: true
     branches:
     - release-1.2
-    cluster: kubevirt-prow-workloads
+    cluster: prow-workloads
     context: pull-kubevirt-e2e-k8s-1.27-sig-storage
     decorate: true
     decoration_config:
@@ -1247,11 +1246,15 @@ presubmits:
           value: k8s-1.27-sig-storage
         - name: KUBEVIRT_PSA
           value: "true"
+        - name: KUBEVIRT_WITH_ETC_IN_MEMORY
+          value: "true"
+        - name: KUBEVIRT_WITH_ETC_CAPACITY
+          value: "1G"
         image: quay.io/kubevirtci/bootstrap:v20240118-315742b
         name: ""
         resources:
           requests:
-            memory: 29Gi
+            memory: 52Gi
         securityContext:
           privileged: true
       nodeSelector:
@@ -1259,7 +1262,7 @@ presubmits:
   - always_run: true
     branches:
     - release-1.2
-    cluster: kubevirt-prow-workloads
+    cluster: prow-workloads
     context: pull-kubevirt-e2e-k8s-1.27-sig-compute
     decorate: true
     decoration_config:
@@ -1273,6 +1276,7 @@ presubmits:
       preset-shared-images: "true"
     max_concurrency: 11
     name: pull-kubevirt-e2e-k8s-1.27-sig-compute-1.2
+    optional: true
     spec:
       containers:
       - command:
@@ -1293,7 +1297,7 @@ presubmits:
         name: ""
         resources:
           requests:
-            memory: 29Gi
+            memory: 52Gi
         securityContext:
           privileged: true
       nodeSelector:
@@ -1301,7 +1305,7 @@ presubmits:
   - always_run: false
     branches:
     - release-1.2
-    cluster: kubevirt-prow-workloads
+    cluster: prow-workloads
     context: pull-kubevirt-e2e-k8s-1.29-sig-compute-realtime
     decorate: true
     decoration_config:
@@ -1334,7 +1338,7 @@ presubmits:
         name: ""
         resources:
           requests:
-            memory: 29Gi
+            memory: 52Gi
         securityContext:
           privileged: true
       nodeSelector:
@@ -1342,7 +1346,7 @@ presubmits:
   - always_run: true
     branches:
     - release-1.2
-    cluster: kubevirt-prow-workloads
+    cluster: prow-workloads
     context: pull-kubevirt-e2e-k8s-1.27-sig-operator
     decorate: true
     decoration_config:
@@ -1374,7 +1378,7 @@ presubmits:
         name: ""
         resources:
           requests:
-            memory: 29Gi
+            memory: 52Gi
         securityContext:
           privileged: true
       nodeSelector:
@@ -1382,7 +1386,7 @@ presubmits:
   - always_run: true
     branches:
     - release-1.2
-    cluster: kubevirt-prow-workloads
+    cluster: prow-workloads
     context: pull-kubevirt-e2e-k8s-1.28-sig-network
     decorate: true
     decoration_config:
@@ -1414,7 +1418,7 @@ presubmits:
         name: ""
         resources:
           requests:
-            memory: 29Gi
+            memory: 52Gi
         securityContext:
           privileged: true
       nodeSelector:
@@ -1422,7 +1426,7 @@ presubmits:
   - always_run: true
     branches:
     - release-1.2
-    cluster: kubevirt-prow-workloads
+    cluster: prow-workloads
     context: pull-kubevirt-e2e-k8s-1.28-sig-storage
     decorate: true
     decoration_config:
@@ -1448,11 +1452,15 @@ presubmits:
           value: k8s-1.28-sig-storage
         - name: KUBEVIRT_PSA
           value: "true"
+        - name: KUBEVIRT_WITH_ETC_IN_MEMORY
+          value: "true"
+        - name: KUBEVIRT_WITH_ETC_CAPACITY
+          value: "1G"
         image: quay.io/kubevirtci/bootstrap:v20240118-315742b
         name: ""
         resources:
           requests:
-            memory: 29Gi
+            memory: 52Gi
         securityContext:
           privileged: true
       nodeSelector:
@@ -1460,7 +1468,7 @@ presubmits:
   - always_run: true
     branches:
     - release-1.2
-    cluster: kubevirt-prow-workloads
+    cluster: prow-workloads
     context: pull-kubevirt-e2e-k8s-1.28-sig-compute
     decorate: true
     decoration_config:
@@ -1494,7 +1502,7 @@ presubmits:
         name: ""
         resources:
           requests:
-            memory: 29Gi
+            memory: 52Gi
         securityContext:
           privileged: true
       nodeSelector:
@@ -1502,7 +1510,7 @@ presubmits:
   - always_run: true
     branches:
     - release-1.2
-    cluster: kubevirt-prow-workloads
+    cluster: prow-workloads
     context: pull-kubevirt-e2e-k8s-1.28-sig-operator
     decorate: true
     decoration_config:
@@ -1534,7 +1542,7 @@ presubmits:
         name: ""
         resources:
           requests:
-            memory: 29Gi
+            memory: 52Gi
         securityContext:
           privileged: true
       nodeSelector:
@@ -1572,7 +1580,7 @@ presubmits:
   - always_run: true
     branches:
     - release-1.2
-    cluster: kubevirt-prow-workloads
+    cluster: prow-workloads
     context: pull-kubevirt-e2e-k8s-1.29-sig-network
     decorate: true
     decoration_config:
@@ -1604,7 +1612,7 @@ presubmits:
         name: ""
         resources:
           requests:
-            memory: 29Gi
+            memory: 52Gi
         securityContext:
           privileged: true
       nodeSelector:
@@ -1612,7 +1620,7 @@ presubmits:
   - always_run: true
     branches:
     - release-1.2
-    cluster: kubevirt-prow-workloads
+    cluster: prow-workloads
     context: pull-kubevirt-e2e-k8s-1.29-sig-storage
     decorate: true
     decoration_config:
@@ -1638,11 +1646,15 @@ presubmits:
           value: k8s-1.29-sig-storage
         - name: KUBEVIRT_PSA
           value: "true"
+        - name: KUBEVIRT_WITH_ETC_IN_MEMORY
+          value: "true"
+        - name: KUBEVIRT_WITH_ETC_CAPACITY
+          value: "1G"
         image: quay.io/kubevirtci/bootstrap:v20240118-315742b
         name: ""
         resources:
           requests:
-            memory: 29Gi
+            memory: 52Gi
         securityContext:
           privileged: true
       nodeSelector:
@@ -1650,7 +1662,7 @@ presubmits:
   - always_run: true
     branches:
     - release-1.2
-    cluster: kubevirt-prow-workloads
+    cluster: prow-workloads
     context: pull-kubevirt-e2e-k8s-1.29-sig-compute
     decorate: true
     decoration_config:
@@ -1684,7 +1696,7 @@ presubmits:
         name: ""
         resources:
           requests:
-            memory: 29Gi
+            memory: 52Gi
         securityContext:
           privileged: true
       nodeSelector:
@@ -1692,7 +1704,7 @@ presubmits:
   - always_run: true
     branches:
     - release-1.2
-    cluster: kubevirt-prow-workloads
+    cluster: prow-workloads
     context: pull-kubevirt-e2e-k8s-1.29-sig-operator
     decorate: true
     decoration_config:
@@ -1724,7 +1736,7 @@ presubmits:
         name: ""
         resources:
           requests:
-            memory: 29Gi
+            memory: 52Gi
         securityContext:
           privileged: true
       nodeSelector:

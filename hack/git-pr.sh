@@ -40,13 +40,14 @@ repo=kubevirt
 command_path=$(pwd)
 targetbranch=master
 labels=
+missing_labels=
 description_command=
 title=
 body=
 head_branch=
 release_note_none=
 
-while getopts ":Dc:s:l:t:T:p:n:e:b:o:r:m:L:d:h:R:B:" opt; do
+while getopts ":Dc:s:l:t:T:p:n:e:b:o:r:m:L:M:d:h:R:B:" opt; do
     case "${opt}" in
         D )
             dry_run=true
@@ -90,6 +91,9 @@ while getopts ":Dc:s:l:t:T:p:n:e:b:o:r:m:L:d:h:R:B:" opt; do
         L )
             labels="${OPTARG}"
             ;;
+        M )
+            missing_labels="${OPTARG}"
+            ;;
         d )
             description_command="${OPTARG}"
             ;;
@@ -114,6 +118,19 @@ if [ -z "${command}" ]; then
     exit 1
 fi
 
+if [ -n "${missing_labels}" ]; then
+    if ! labels-checker \
+        --org=kubevirt \
+        --repo="${repo}" \
+        --author="${user}" \
+        --branch-name="${branch}" \
+        --ensure-labels-missing="${missing_labels}" \
+        --github-token-path="${token}"; then
+        echo "skipping PR creation since a PR exists and has one of labels ${missing_labels}"
+        exit 0
+    fi
+fi
+
 if [ -z "${summary}" ]; then
     summary="Run ${command}"
 fi
@@ -122,7 +139,12 @@ cd "${command_path}"
 eval "${command}"
 
 cd "${repo_path}"
-echo "git config user.name=${git_name} user.email=${git_email}..." >&2
+
+if [ -z "$(git status --porcelain)" ]; then
+    echo "Nothing changed" >&2
+    exit 0
+fi
+
 git config user.name "${git_name}"
 git config user.email "${git_email}"
 
@@ -149,17 +171,13 @@ if [ -z "${head_branch}" ]; then
 fi
 
 git add -A
-if git diff --name-only --exit-code HEAD; then
-    echo "Nothing changed" >&2
-    exit 0
-fi
 
 if [ -n "$release_note_none" ]; then
     summary+='\n\n```release-note\nNONE\n```'
 fi
 
 if [ -z "$dry_run" ]; then
-    git commit -s -m "${summary}"
+    git commit -s -m "${summary//[@#]/}"
     git push -f "https://${user}@github.com/${user}/${repo}.git" HEAD:"${branch}"
 else
     echo "dry_run: git commit -s -m \"${summary}\""

@@ -1,11 +1,11 @@
 periodics:
 - name: periodic-hco-push-nightly-build-main
-  cron: "2 2 * * *"
+  cron: "2 4 * * *"
   decorate: true
   annotations:
     testgrid-dashboards: kubevirt-hyperconverged-cluster-operator-periodics
   decoration_config:
-    timeout: 1h
+    timeout: 2h
     grace_period: 5m
   max_concurrency: 1
   labels:
@@ -19,13 +19,15 @@ periodics:
     - org: kubevirt
       repo: hyperconverged-cluster-operator
       base_ref: main
-      work_dir: true
-  cluster: kubevirt-prow-workloads
+  cluster: prow-workloads
   spec:
     nodeSelector:
       type: bare-metal-external
     containers:
-    - image: quay.io/kubevirtci/bootstrap:v20240829-fb5890c
+    - image: quay.io/kubevirtci/bootstrap:v20251218-e7a7fc9
+      env:
+      - name: GIMME_GO_VERSION
+        value: "1.25.5"
       command:
         - "/usr/local/bin/runner.sh"
         - "/bin/bash"
@@ -36,4 +38,4 @@ periodics:
         privileged: true
       resources:
         requests:
-          memory: "8Gi"
+          memory: "50Gi"

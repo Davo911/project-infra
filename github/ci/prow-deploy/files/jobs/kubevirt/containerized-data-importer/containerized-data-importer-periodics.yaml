@@ -10,9 +10,9 @@ periodics:
   cluster: kubevirt-prow-control-plane
   spec:
     containers:
-    - image: quay.io/kubevirtci/flakefinder:v20230112-ec14f598
+    - image: quay.io/kubevirtci/flakefinder:v20260210-878d8f0
       command:
-      - "/app/robots/cmd/flakefinder/app.binary"
+      - /usr/bin/flakefinder
       args:
       - --dry-run=false
       - --token=/etc/github/oauth
@@ -32,9 +32,9 @@ periodics:
   cluster: kubevirt-prow-control-plane
   spec:
     containers:
-    - image: quay.io/kubevirtci/flakefinder:v20230112-ec14f598
+    - image: quay.io/kubevirtci/flakefinder:v20260210-878d8f0
       command:
-      - "/app/robots/cmd/flakefinder/app.binary"
+      - /usr/bin/flakefinder
       args:
       - --dry-run=false
       - --token=/etc/github/oauth
@@ -54,9 +54,9 @@ periodics:
   cluster: kubevirt-prow-control-plane
   spec:
     containers:
-    - image: quay.io/kubevirtci/flakefinder:v20230112-ec14f598
+    - image: quay.io/kubevirtci/flakefinder:v20260210-878d8f0
       command:
-      - "/app/robots/cmd/flakefinder/app.binary"
+      - /usr/bin/flakefinder
       args:
       - --dry-run=false
       - --token=/etc/github/oauth
@@ -65,7 +65,10 @@ periodics:
       - --pr_base_branch=main
       - --repo=containerized-data-importer
       - --skip_results_before_start_of_report=false
-- name: periodic-containerized-data-importer-push-nightly-ARM64
+
+# This task would build images for amd64, arm64 and s390x, and push
+# multi-arch manifest
+- name: periodic-containerized-data-importer-push-nightly
   cron: "2 3 * * *"
   decorate: true
   annotations:
@@ -75,7 +78,7 @@ periodics:
     grace_period: 5m
   max_concurrency: 1
   labels:
-    preset-dind-enabled: "true"
+    preset-podman-in-container-enabled: "true"
     preset-docker-mirror-proxy: "true"
     preset-gcs-credentials: "true"
     preset-kubevirtci-quay-credential: "true"
@@ -83,18 +86,15 @@ periodics:
     - org: kubevirt
       repo: containerized-data-importer
       base_ref: main
-      work_dir: true
-  cluster: kubevirt-prow-workloads
+  cluster: prow-workloads
   spec:
     nodeSelector:
       type: bare-metal-external
     containers:
-    - image: quay.io/kubevirtci/bootstrap-legacy:v20220810-a8f2e6c
+    - image: quay.io/kubevirtci/golang:v20251218-e7a7fc9
       env:
       - name: DOCKER_PREFIX
         value: quay.io/kubevirt
-      - name: BUILD_ARCH
-        value: crossbuild-aarch64
       command:
         - "/usr/local/bin/runner.sh"
         - "/bin/sh"
@@ -106,4 +106,4 @@ periodics:
         privileged: true
       resources:
         requests:
-          memory: "8Gi"
+          memory: "16Gi"

@@ -33,7 +33,7 @@ presubmits:
       always_run: true
       optional: false
       decorate: true
-      cluster: kubevirt-prow-workloads
+      cluster: prow-workloads
       decoration_config:
         timeout: 3h
         grace_period: 5m
@@ -51,7 +51,7 @@ presubmits:
               privileged: true
             resources:
               requests:
-                memory: "29Gi"
+                memory: "52Gi"
             command:
               - "/usr/local/bin/runner.sh"
               - "/bin/sh"

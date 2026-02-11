@@ -5,7 +5,36 @@ presubmits:
       - release-v1.38
       - release-v1.43
       - release-v1.49
-    cluster: kubevirt-prow-workloads
+    cluster: prow-workloads
+    annotations:
+      fork-per-release: "true"
+    always_run: true
+    optional: false
+    decorate: true
+    decoration_config:
+      timeout: 1h
+      grace_period: 5m
+    labels:
+      preset-podman-in-container-enabled: "true"
+      preset-docker-mirror-proxy: "true"
+    spec:
+      containers:
+        - image: quay.io/kubevirtci/bootstrap:v20251218-e7a7fc9
+          command:
+            - "/usr/local/bin/runner.sh"
+            - "/bin/sh"
+            - "-c"
+            - "make test-unit"
+          # docker-in-docker needs privileged mode
+          securityContext:
+            privileged: true
+          resources:
+            requests:
+              memory: "8Gi"
+  - name: pull-cdi-unit-test-s390x
+    skip_branches:
+      - release-v\d+\.\d+
+    cluster: prow-s390x-workloads
     annotations:
       fork-per-release: "true"
     always_run: true
@@ -16,10 +45,9 @@ presubmits:
       grace_period: 5m
     labels:
       preset-podman-in-container-enabled: "true"
-      preset-docker-mirror-proxy: "true"
     spec:
       containers:
-        - image: quay.io/kubevirtci/bootstrap:v20240829-fb5890c
+        - image: quay.io/kubevirtci/golang:v20251218-e7a7fc9
           command:
             - "/usr/local/bin/runner.sh"
             - "/bin/sh"
@@ -64,7 +92,7 @@ presubmits:
     optional: true
     annotations:
       fork-per-release: "true"
-    cluster: kubevirt-prow-workloads
+    cluster: prow-workloads
     decorate: true
     decoration_config:
       grace_period: 10m0s
@@ -85,7 +113,7 @@ presubmits:
         env:
         - name: COVERALLS_TOKEN_FILE
           value: /root/.docker/secrets/coveralls/token
-        image: quay.io/kubevirtci/bootstrap:v20240829-fb5890c
+        image: quay.io/kubevirtci/bootstrap:v20251218-e7a7fc9
         name: ""
         resources:
           requests:
@@ -109,7 +137,7 @@ presubmits:
     annotations:
       fork-per-release: "true"
     always_run: true
-    optional: true
+    optional: false
     decorate: true
     decoration_config:
       timeout: 1h
@@ -120,7 +148,7 @@ presubmits:
       preset-bazel-cache: "true"
     spec:
       containers:
-        - image: quay.io/kubevirtci/bootstrap:v20240829-fb5890c
+        - image: quay.io/kubevirtci/bootstrap:v20251218-e7a7fc9
           command:
             - "/usr/local/bin/runner.sh"
             - "/bin/sh"
@@ -141,7 +169,7 @@ presubmits:
     annotations:
       fork-per-release: "true"
     always_run: true
-    optional: true
+    optional: false
     decorate: true
     decoration_config:
       timeout: 1h
@@ -152,7 +180,7 @@ presubmits:
       preset-bazel-cache: "true"
     spec:
       containers:
-        - image: quay.io/kubevirtci/bootstrap:v20240829-fb5890c
+        - image: quay.io/kubevirtci/bootstrap:v20251218-e7a7fc9
           command:
             - "/usr/local/bin/runner.sh"
             - "/bin/sh"
@@ -173,7 +201,7 @@ presubmits:
     annotations:
       fork-per-release: "true"
     always_run: true
-    optional: true
+    optional: false
     decorate: true
     decoration_config:
       timeout: 1h
@@ -184,7 +212,7 @@ presubmits:
       preset-bazel-cache: "true"
     spec:
       containers:
-        - image: quay.io/kubevirtci/bootstrap:v20240829-fb5890c
+        - image: quay.io/kubevirtci/bootstrap:v20251218-e7a7fc9
           command:
             - "/usr/local/bin/runner.sh"
             - "/bin/sh"
@@ -216,7 +244,7 @@ presubmits:
       preset-bazel-cache: "true"
     spec:
       containers:
-        - image: quay.io/kubevirtci/golang:v20240829-fb5890c
+        - image: quay.io/kubevirtci/golang:v20251218-e7a7fc9
           command:
             - "/usr/local/bin/runner.sh"
             - "/bin/sh"
@@ -241,7 +269,7 @@ presubmits:
       timeout: 5h
       grace_period: 5m
     max_concurrency: 6
-    cluster: kubevirt-prow-workloads
+    cluster: prow-workloads
     labels:
       preset-podman-in-container-enabled: "true"
       preset-docker-mirror-proxy: "true"
@@ -250,7 +278,12 @@ presubmits:
       nodeSelector:
         type: bare-metal-external
       containers:
-        - image: quay.io/kubevirtci/bootstrap:v20240829-fb5890c
+        - image: quay.io/kubevirtci/bootstrap:v20251218-e7a7fc9
+          env:
+          - name: KUBEVIRT_WITH_ETC_IN_MEMORY
+            value: "true"
+          - name: KUBEVIRT_WITH_ETC_CAPACITY
+            value: "1G"
           command:
             - "/usr/local/bin/runner.sh"
             - "/bin/sh"
@@ -261,7 +294,7 @@ presubmits:
             privileged: true
           resources:
             requests:
-              memory: "29Gi"
+              memory: "52Gi"
   - name: pull-containerized-data-importer-e2e-destructive
     skip_branches:
       - release-v\d+\.\d+
@@ -275,7 +308,7 @@ presubmits:
       timeout: 5h
       grace_period: 5m
     max_concurrency: 6
-    cluster: kubevirt-prow-workloads
+    cluster: prow-workloads
     labels:
       preset-podman-in-container-enabled: "true"
       preset-docker-mirror-proxy: "true"
@@ -284,7 +317,12 @@ presubmits:
       nodeSelector:
         type: bare-metal-external
       containers:
-        - image: quay.io/kubevirtci/bootstrap:v20240829-fb5890c
+        - image: quay.io/kubevirtci/bootstrap:v20251218-e7a7fc9
+          env:
+          - name: KUBEVIRT_WITH_ETC_IN_MEMORY
+            value: "true"
+          - name: KUBEVIRT_WITH_ETC_CAPACITY
+            value: "1G"
           command:
             - "/usr/local/bin/runner.sh"
             - "/bin/sh"
@@ -295,7 +333,7 @@ presubmits:
             privileged: true
           resources:
             requests:
-              memory: "29Gi"
+              memory: "52Gi"
   - name: pull-containerized-data-importer-e2e-destructive-release
     branches:
       - release-v\d+\.\d+
@@ -309,7 +347,7 @@ presubmits:
       timeout: 5h
       grace_period: 5m
     max_concurrency: 6
-    cluster: kubevirt-prow-workloads
+    cluster: prow-workloads
     labels:
       preset-podman-in-container-enabled: "true"
       preset-docker-mirror-proxy: "true"
@@ -318,7 +356,12 @@ presubmits:
       nodeSelector:
         type: bare-metal-external
       containers:
-        - image: quay.io/kubevirtci/bootstrap:v20240829-fb5890c
+        - image: quay.io/kubevirtci/bootstrap:v20251218-e7a7fc9
+          env:
+          - name: KUBEVIRT_WITH_ETC_IN_MEMORY
+            value: "true"
+          - name: KUBEVIRT_WITH_ETC_CAPACITY
+            value: "1G"
           command:
             - "/usr/local/bin/runner.sh"
             - "/bin/sh"
@@ -329,7 +372,7 @@ presubmits:
             privileged: true
           resources:
             requests:
-              memory: "29Gi"
+              memory: "52Gi"
   - name: pull-containerized-data-importer-e2e-istio
     skip_branches:
       - release-v\d+\.\d+
@@ -343,7 +386,7 @@ presubmits:
       timeout: 5h
       grace_period: 5m
     max_concurrency: 6
-    cluster: kubevirt-prow-workloads
+    cluster: prow-workloads
     labels:
       preset-podman-in-container-enabled: "true"
       preset-docker-mirror-proxy: "true"
@@ -352,7 +395,12 @@ presubmits:
       nodeSelector:
         type: bare-metal-external
       containers:
-        - image: quay.io/kubevirtci/bootstrap:v20240829-fb5890c
+        - image: quay.io/kubevirtci/bootstrap:v20251218-e7a7fc9
+          env:
+          - name: KUBEVIRT_WITH_ETC_IN_MEMORY
+            value: "true"
+          - name: KUBEVIRT_WITH_ETC_CAPACITY
+            value: "1G"
           command:
             - "/usr/local/bin/runner.sh"
             - "/bin/sh"
@@ -363,7 +411,7 @@ presubmits:
             privileged: true
           resources:
             requests:
-              memory: "29Gi"
+              memory: "52Gi"
   - name: pull-containerized-data-importer-e2e-hpp-previous
     skip_branches:
       - release-v1.28
@@ -381,7 +429,7 @@ presubmits:
       timeout: 5h
       grace_period: 5m
     max_concurrency: 6
-    cluster: kubevirt-prow-workloads
+    cluster: prow-workloads
     labels:
       preset-podman-in-container-enabled: "true"
       preset-docker-mirror-proxy: "true"
@@ -390,7 +438,12 @@ presubmits:
       nodeSelector:
         type: bare-metal-external
       containers:
-        - image: quay.io/kubevirtci/bootstrap:v20240829-fb5890c
+        - image: quay.io/kubevirtci/bootstrap:v20251218-e7a7fc9
+          env:
+          - name: KUBEVIRT_WITH_ETC_IN_MEMORY
+            value: "true"
+          - name: KUBEVIRT_WITH_ETC_CAPACITY
+            value: "1G"
           command:
             - "/usr/local/bin/runner.sh"
             - "/bin/sh"
@@ -401,7 +454,7 @@ presubmits:
             privileged: true
           resources:
             requests:
-              memory: "29Gi"
+              memory: "52Gi"
   - name: pull-containerized-data-importer-e2e-ceph
     skip_branches:
       - release-v1.28
@@ -419,7 +472,7 @@ presubmits:
       timeout: 6h
       grace_period: 10m
     max_concurrency: 6
-    cluster: kubevirt-prow-workloads
+    cluster: prow-workloads
     labels:
       preset-podman-in-container-enabled: "true"
       preset-docker-mirror-proxy: "true"
@@ -428,7 +481,12 @@ presubmits:
       nodeSelector:
         type: bare-metal-external
       containers:
-        - image: quay.io/kubevirtci/bootstrap:v20240829-fb5890c
+        - image: quay.io/kubevirtci/bootstrap:v20251218-e7a7fc9
+          env:
+          - name: KUBEVIRT_WITH_ETC_IN_MEMORY
+            value: "true"
+          - name: KUBEVIRT_WITH_ETC_CAPACITY
+            value: "1G"
           command:
             - "/usr/local/bin/runner.sh"
             - "/bin/sh"
@@ -439,7 +497,7 @@ presubmits:
             privileged: true
           resources:
             requests:
-              memory: "29Gi"
+              memory: "52Gi"
   - name: pull-containerized-data-importer-e2e-ceph-wffc
     skip_branches:
       - release-v\d+\.\d+
@@ -453,7 +511,7 @@ presubmits:
       timeout: 7h
       grace_period: 10m
     max_concurrency: 6
-    cluster: kubevirt-prow-workloads
+    cluster: prow-workloads
     labels:
       preset-podman-in-container-enabled: "true"
       preset-docker-mirror-proxy: "true"
@@ -462,7 +520,12 @@ presubmits:
       nodeSelector:
         type: bare-metal-external
       containers:
-        - image: quay.io/kubevirtci/bootstrap:v20240829-fb5890c
+        - image: quay.io/kubevirtci/bootstrap:v20251218-e7a7fc9
+          env:
+          - name: KUBEVIRT_WITH_ETC_IN_MEMORY
+            value: "true"
+          - name: KUBEVIRT_WITH_ETC_CAPACITY
+            value: "1G"
           command:
             - "/usr/local/bin/runner.sh"
             - "/bin/sh"
@@ -473,7 +536,7 @@ presubmits:
             privileged: true
           resources:
             requests:
-              memory: "29Gi"
+              memory: "52Gi"
   - name: pull-containerized-data-importer-e2e-upg
     skip_branches:
       - release-v\d+\.\d+
@@ -487,7 +550,7 @@ presubmits:
       timeout: 5h
       grace_period: 5m
     max_concurrency: 6
-    cluster: kubevirt-prow-workloads
+    cluster: prow-workloads
     labels:
       preset-podman-in-container-enabled: "true"
       preset-docker-mirror-proxy: "true"
@@ -496,7 +559,12 @@ presubmits:
       nodeSelector:
         type: bare-metal-external
       containers:
-        - image: quay.io/kubevirtci/bootstrap:v20240829-fb5890c
+        - image: quay.io/kubevirtci/bootstrap:v20251218-e7a7fc9
+          env:
+          - name: KUBEVIRT_WITH_ETC_IN_MEMORY
+            value: "true"
+          - name: KUBEVIRT_WITH_ETC_CAPACITY
+            value: "1G"
           command:
             - "/usr/local/bin/runner.sh"
             - "/bin/sh"
@@ -507,7 +575,7 @@ presubmits:
             privileged: true
           resources:
             requests:
-              memory: "29Gi"
+              memory: "52Gi"
   - name: pull-containerized-data-importer-e2e-nfs
     skip_branches:
       - release-v\d+\.\d+
@@ -521,7 +589,7 @@ presubmits:
       timeout: 5h
       grace_period: 5m
     max_concurrency: 6
-    cluster: kubevirt-prow-workloads
+    cluster: prow-workloads
     labels:
       preset-podman-in-container-enabled: "true"
       preset-docker-mirror-proxy: "true"
@@ -530,7 +598,12 @@ presubmits:
       nodeSelector:
         type: bare-metal-external
       containers:
-        - image: quay.io/kubevirtci/bootstrap:v20240829-fb5890c
+        - image: quay.io/kubevirtci/bootstrap:v20251218-e7a7fc9
+          env:
+          - name: KUBEVIRT_WITH_ETC_IN_MEMORY
+            value: "true"
+          - name: KUBEVIRT_WITH_ETC_CAPACITY
+            value: "1G"
           command:
             - "/usr/local/bin/runner.sh"
             - "/bin/sh"
@@ -541,7 +614,7 @@ presubmits:
             privileged: true
           resources:
             requests:
-              memory: "29Gi"
+              memory: "52Gi"
   - name: pull-containerized-data-importer-fossa
     skip_branches:
       - release-v\d+\.\d+
@@ -568,7 +641,7 @@ presubmits:
         env:
         - name: FOSSA_TOKEN_FILE
           value: /root/.docker/secrets/fossa/token
-        image: quay.io/kubevirtci/bootstrap:v20240829-fb5890c
+        image: quay.io/kubevirtci/bootstrap:v20251218-e7a7fc9
         name: ""
         resources:
           requests:
@@ -596,7 +669,7 @@ presubmits:
       timeout: 5h
       grace_period: 5m
     max_concurrency: 6
-    cluster: kubevirt-prow-workloads
+    cluster: prow-workloads
     labels:
       preset-podman-in-container-enabled: "true"
       preset-docker-mirror-proxy: "true"
@@ -605,7 +678,12 @@ presubmits:
       nodeSelector:
         type: bare-metal-external
       containers:
-        - image:  quay.io/kubevirtci/bootstrap:v20240829-fb5890c
+        - image:  quay.io/kubevirtci/bootstrap:v20251218-e7a7fc9
+          env:
+          - name: KUBEVIRT_WITH_ETC_IN_MEMORY
+            value: "true"
+          - name: KUBEVIRT_WITH_ETC_CAPACITY
+            value: "1G"
           command:
             - "/usr/local/bin/runner.sh"
             - "/bin/sh"
@@ -616,4 +694,4 @@ presubmits:
             privileged: true
           resources:
             requests:
-              memory: "29Gi"
+              memory: "52Gi"

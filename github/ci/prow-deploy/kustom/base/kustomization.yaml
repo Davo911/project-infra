@@ -1,6 +1,4 @@
 resources:
-  - manifests/local/botreview-deployment.yaml
-  - manifests/local/botreview-service.yaml
   - manifests/local/branch-protector.yaml
   - manifests/local/cherrypicker_deployment.yaml
   - manifests/local/cherrypicker_service.yaml
@@ -19,6 +17,9 @@ resources:
   - manifests/local/referee-deployment.yaml
   - manifests/local/referee-service.yaml
   - manifests/local/referee-servicemonitor.yaml
+  - manifests/local/test-subset-rbac.yaml
+  - manifests/local/test-subset-deployment.yaml
+  - manifests/local/test-subset-service.yaml
   - manifests/local/release-blocker_deployment.yaml
   - manifests/local/release-blocker_service.yaml
   - manifests/local/statusreconciler_rbac.yaml

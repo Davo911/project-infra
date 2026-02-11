@@ -14,7 +14,7 @@ presubmits:
       preset-dind-enabled: "true"
       preset-docker-mirror-proxy: "true"
       preset-shared-images: "true"
-    cluster: kubevirt-prow-workloads
+    cluster: prow-workloads
     spec:
       nodeSelector:
         type: bare-metal-external
@@ -30,7 +30,7 @@ presubmits:
           privileged: true
         resources:
           requests:
-            memory: "29Gi"
+            memory: "52Gi"
   - name: pull-hyperconverged-cluster-operator-e2e-k8s-1.21
     branches:
     - release-1.5
@@ -45,7 +45,7 @@ presubmits:
       preset-dind-enabled: "true"
       preset-docker-mirror-proxy: "true"
       preset-shared-images: "true"
-    cluster: kubevirt-prow-workloads
+    cluster: prow-workloads
     spec:
       nodeSelector:
         type: bare-metal-external
@@ -61,4 +61,4 @@ presubmits:
           privileged: true
         resources:
           requests:
-            memory: "29Gi"
+            memory: "52Gi"

@@ -30,12 +30,17 @@ default:
     - color: 8452c9
       name: triage/build-watcher
       target: issues
-      description: Discovered by a kubevirt build-watcher. Pay attention to these issues to keep CI healthy.
+      description: DEPRECATED
       prowPlugin: label
       addedBy: anyone
       previously:
         - name: triage/build-officer
           color: 8452c9
+    - color: d455d0
+      description: Indicates an issue was caused by failures in the infrastructure.
+      name: triage/infra-issue
+      target: both
+      addedBy: anyone
     - color: c2e0c6
       name: release-note
       target: prs
@@ -81,6 +86,18 @@ default:
       target: prs
       addedBy: prow
       prowPlugin: release-note
+    - color: e11d21
+      description: Indicates that a PR should not merge because it has an invalid commit message.
+      name: do-not-merge/invalid-commit-message
+      target: prs
+      prowPlugin: invalidcommitmsg
+      addedBy: prow
+    - color: e11d21
+      description: Indicates that a PR should not merge because it has an invalid OWNERS file in it.
+      name: do-not-merge/invalid-owners-file
+      target: prs
+      prowPlugin: verify-owners
+      addedBy: prow
     - name: kind/blocker
       color: b60205
       target: both
@@ -96,6 +113,15 @@ default:
       target: both
       addedBy: anyone
       prowPlugin: label
+    - name: kind/cleanup
+      color: ce23cf
+      target: both
+      prowPlugin: label
+      addedBy: anyone
+      description: Categorizes issue or PR as related to cleaning up code, process, or technical debt.
+      previously:
+      - name: sig/code-quality
+        color: ce23cf
     - name: kind/flake
       color: f7c5c7
       target: both
@@ -247,8 +273,10 @@ default:
           color: c5def5
         - name: sig-virtualization
           color: c5def5
-    - name: sig/code-quality
-      color: ce23cf
+        - name: sig/virtualization
+          color: c5def5
+    - name: sig/control-plane
+      color: c5def5
       target: both
       prowPlugin: label
       addedBy: anyone
@@ -296,6 +324,24 @@ default:
       target: both
       prowPlugin: label
       addedBy: anyone
+    - name: wg/arch-s390x
+      color: E3F582
+      description: Denotes an issue or PR that relates to the s390x architecture working group.
+      target: both
+      prowPlugin: label
+      addedBy: anyone
+    - name: wg/arch-arm
+      color: E3F582
+      description: Denotes an issue or PR that relates to the ARM architecture working group.
+      target: both
+      prowPlugin: label
+      addedBy: anyone
+    - name: wg/code-quality
+      color: E3F582
+      description: Denotes an issue or PR that relates to the code-quality working group.
+      target: both
+      prowPlugin: label
+      addedBy: anyone
     - color: e11d21
       description: Indicates the PR's author has not DCO signed all their commits.
       name: "dco-signoff: no"
@@ -314,6 +360,18 @@ default:
       target: prs
       prowPlugin: lgtm
       addedBy: reviewers or members
+    - color: b60205
+      description: Indicates that a PR requires a review from an approver.
+      name: needs-approver-review
+      target: prs
+      prowPlugin: label
+      addedBy: kubevirt-bot
+    - color: 57b004
+      description: Indicates that a PR is tied to an approved VEP and is prioritized.
+      name: approved-vep
+      target: prs
+      prowPlugin: label
+      addedBy: approvers
     - color: 0ffa16
       description: Indicates a PR has been approved by an approver from all required OWNERS files.
       name: approved
@@ -354,14 +412,24 @@ default:
       description: Categorizes an issue or pull request as critical and of urgent priority.
       prowPlugin: label
       target: both
+    - name: priority/backlog
+      addedBy: anyone
+      color: fbca04
+      description: Indicate that the issue or PR is a lower priority and can be worked on in the future 
+      prowPlugin: label 
+      target: both
 repos:
+  kubevirt/containerized-data-importer:
+    labels:
+      - addedBy: kubevirt-bot
+        color: 0ffa16
+        description: Indicates a PR is trusted, used by tide for auto-merging PRs.
+        name: skip-review
+        target: prs
   kubevirt/kubevirt:
     labels:
       - name: needs/documentation
         color: d4c5f9
-        target: both
-      - name: priority/backlog
-        color: fbca04
         target: both
       - name: research-needed
         color: fef2c0
@@ -414,6 +482,12 @@ repos:
       - name: area/instancetype
         color: bfd4f2
         target: both
+      - name: area/testing
+        color: c5def5
+        target: both
+        previously:
+          - name: topic/testing
+            color: c5def5
       - name: topic/api
         color: c5def5
         target: both
@@ -444,9 +518,6 @@ repos:
       - name: topic/scheduling
         color: c5def5
         target: both
-      - name: topic/testing
-        color: c5def5
-        target: both
       - color: e11d21
         description: Categorizes PRs as related to changing build files of virt-* components
         name: kind/build-change
@@ -459,6 +530,18 @@ repos:
         target: both
         prowPlugin: release-blocker
         addedBy: prow
+      - addedBy: kubevirt-bot
+        color: 0ffa16
+        description: Indicates a PR is trusted, used by tide for auto-merging PRs.
+        name: skip-review
+        target: prs
+  kubevirt/kubevirtci:
+    labels:
+    - addedBy: kubevirt-bot
+      color: 0ffa16
+      description: Indicates a PR is trusted, used by tide for auto-merging PRs.
+      name: skip-review
+      target: prs
   kubevirt/kubevirt.github.io:
     labels:
       - color: 80e591
@@ -533,6 +616,11 @@ repos:
         name: ok-to-rehearse
         prowPlugin: label
         target: pr
+      - addedBy: kubevirt-bot
+        color: 0ffa16
+        description: Indicates a PR is trusted, used by tide for auto-merging PRs.
+        name: skip-review
+        target: prs
   nmstate/kubernetes-nmstate:
     labels:
       - name: kind/documentation

@@ -8,11 +8,11 @@ import (
 	"strings"
 
 	"github.com/sirupsen/logrus"
-	"k8s.io/test-infra/prow/config"
-	"k8s.io/test-infra/prow/github"
-	"k8s.io/test-infra/prow/pluginhelp"
-	"k8s.io/test-infra/prow/plugins"
-	"k8s.io/test-infra/prow/repoowners"
+	"sigs.k8s.io/prow/pkg/config"
+	"sigs.k8s.io/prow/pkg/github"
+	"sigs.k8s.io/prow/pkg/pluginhelp"
+	"sigs.k8s.io/prow/pkg/plugins"
+	"sigs.k8s.io/prow/pkg/repoowners"
 )
 
 const pluginName = "release-blocker"
@@ -60,7 +60,6 @@ type Server struct {
 	botName        string
 
 	// Used for unit testing
-	push         func(newBranch string) error
 	ghc          githubClient
 	log          *logrus.Entry
 	ownersClient prowOwnersClient
@@ -285,13 +284,11 @@ func (s *Server) handleIssueComment(l *logrus.Entry, ic github.IssueCommentEvent
 	if ic.Action != github.IssueCommentActionCreated {
 		return nil
 	}
-
 	org := ic.Repo.Owner.Login
 	repo := ic.Repo.Name
 	num := ic.Issue.Number
 	commentAuthor := ic.Comment.User.Login
 
-	needsLabel := true
 	targetBranch := ""
 
 	l = l.WithFields(logrus.Fields{
@@ -304,10 +301,8 @@ func (s *Server) handleIssueComment(l *logrus.Entry, ic github.IssueCommentEvent
 	matches := releaseBlockRe.FindAllStringSubmatch(ic.Comment.Body, -1)
 
 	if len(cancelMatches) == 1 && len(cancelMatches[0]) == 2 {
-		needsLabel = false
 		targetBranch = strings.TrimSpace(cancelMatches[0][1])
 	} else if len(matches) == 1 && len(matches[0]) == 2 {
-		needsLabel = true
 		targetBranch = strings.TrimSpace(matches[0][1])
 	} else {
 		// no matches
@@ -324,7 +319,7 @@ func (s *Server) handleIssueComment(l *logrus.Entry, ic github.IssueCommentEvent
 
 	// not authorized.
 	if !ok {
-		resp := fmt.Sprintf("only [%s](https://github.com/orgs/%s/people) org members may request release block label", org, org)
+		resp := fmt.Sprintf("Only top-level approvers from the [OWNERS](https://github.com/%s/%s/blob/main/OWNERS_ALIASES) file may request the release block label", org, org)
 		s.log.WithFields(l.Data).Info(resp)
 		return s.ghc.CreateComment(org, repo, num, plugins.FormatICResponse(ic.Comment, resp))
 	}
@@ -334,6 +329,7 @@ func (s *Server) handleIssueComment(l *logrus.Entry, ic github.IssueCommentEvent
 		WithField("target_branch", targetBranch).
 		Debug("release-blocker request.")
 
+	needsLabel := len(cancelMatches) != 1 || len(cancelMatches[0]) != 2
 	resp, err := s.handleLabel(targetBranch, org, repo, num, needsLabel)
 	if err != nil {
 		s.log.WithFields(l.Data).WithError(err)

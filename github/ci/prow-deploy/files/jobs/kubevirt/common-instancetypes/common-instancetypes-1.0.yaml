@@ -21,12 +21,12 @@ presubmits:
         resources:
           requests:
             memory: "1Gi"
-  - name: pull-common-instancetypes-cluster-functest-1.0
+  - name: pull-common-instancetypes-kubevirt-functest-1.0
     branches:
       - release-1.0
     always_run: false
     run_if_changed: "instancetypes/.*|preferences/.*|scripts/.*|tests/functests/.*|tests/vendor/.*|tests/go.*"
-    cluster: kubevirt-prow-workloads
+    cluster: prow-workloads
     decorate: true
     decoration_config:
       grace_period: 5m0s
@@ -45,7 +45,7 @@ presubmits:
         - /usr/local/bin/runner.sh
         - "/bin/sh"
         - "-c"
-        - "make cluster-up && make cluster-sync && make cluster-functest"
+        - "make kubevirt-up && make kubevirt-sync && make kubevirt-functest"
         env:
         - name: KUBEVIRT_MEMORY_SIZE
           value: 16G
@@ -60,12 +60,12 @@ presubmits:
           privileged: true
       nodeSelector:
         type: bare-metal-external
-  - name: pull-common-instancetypes-cluster-functest-fedora-1.0
+  - name: pull-common-instancetypes-kubevirt-functest-fedora-1.0
     branches:
       - release-1.0
     always_run: false
     run_if_changed: "preferences/base/.*|preferences/components/.*|preferences/fedora/.*|tests/functests/.*|tests/vendor/.*|tests/go.*"
-    cluster: kubevirt-prow-workloads
+    cluster: prow-workloads
     decorate: true
     decoration_config:
       grace_period: 5m0s
@@ -84,7 +84,7 @@ presubmits:
         - /usr/local/bin/runner.sh
         - "/bin/sh"
         - "-c"
-        - "make cluster-up && make cluster-sync && make cluster-functest"
+        - "make kubevirt-up && make kubevirt-sync && make kubevirt-functest"
         env:
         - name: KUBEVIRT_MEMORY_SIZE
           value: 16G
@@ -99,12 +99,12 @@ presubmits:
           privileged: true
       nodeSelector:
         type: bare-metal-external
-  - name: pull-common-instancetypes-cluster-functest-centos-7-1.0
+  - name: pull-common-instancetypes-kubevirt-functest-centos-7-1.0
     branches:
       - release-1.0
     always_run: false
     run_if_changed: "preferences/base/.*|preferences/components/.*|preferences/centos/.*|tests/functests/.*|tests/vendor/.*|tests/go.*"
-    cluster: kubevirt-prow-workloads
+    cluster: prow-workloads
     decorate: true
     decoration_config:
       grace_period: 5m0s
@@ -123,7 +123,7 @@ presubmits:
         - /usr/local/bin/runner.sh
         - "/bin/sh"
         - "-c"
-        - "make cluster-up && make cluster-sync && make cluster-functest"
+        - "make kubevirt-up && make kubevirt-sync && make kubevirt-functest"
         env:
         - name: KUBEVIRT_MEMORY_SIZE
           value: 16G
@@ -138,12 +138,12 @@ presubmits:
           privileged: true
       nodeSelector:
         type: bare-metal-external
-  - name: pull-common-instancetypes-cluster-functest-centos-stream-8-1.0
+  - name: pull-common-instancetypes-kubevirt-functest-centos-stream-8-1.0
     branches:
       - release-1.0
     always_run: false
     run_if_changed: "preferences/base/.*|preferences/components/.*|preferences/centos/.*|tests/functests/.*|tests/vendor/.*|tests/go.*"
-    cluster: kubevirt-prow-workloads
+    cluster: prow-workloads
     decorate: true
     decoration_config:
       grace_period: 5m0s
@@ -162,7 +162,7 @@ presubmits:
         - /usr/local/bin/runner.sh
         - "/bin/sh"
         - "-c"
-        - "make cluster-up && make cluster-sync && make cluster-functest"
+        - "make kubevirt-up && make kubevirt-sync && make kubevirt-functest"
         env:
         - name: KUBEVIRT_MEMORY_SIZE
           value: 16G
@@ -177,12 +177,12 @@ presubmits:
           privileged: true
       nodeSelector:
         type: bare-metal-external
-  - name: pull-common-instancetypes-cluster-functest-centos-stream-9-1.0
+  - name: pull-common-instancetypes-kubevirt-functest-centos-stream-9-1.0
     branches:
       - release-1.0
     always_run: false
     run_if_changed: "preferences/base/.*|preferences/components/.*|preferences/centos/.*|tests/functests/.*|tests/vendor/.*|tests/go.*"
-    cluster: kubevirt-prow-workloads
+    cluster: prow-workloads
     decorate: true
     decoration_config:
       grace_period: 5m0s
@@ -201,7 +201,7 @@ presubmits:
         - /usr/local/bin/runner.sh
         - "/bin/sh"
         - "-c"
-        - "make cluster-up && make cluster-sync && make cluster-functest"
+        - "make kubevirt-up && make kubevirt-sync && make kubevirt-functest"
         env:
         - name: KUBEVIRT_MEMORY_SIZE
           value: 16G
@@ -216,12 +216,12 @@ presubmits:
           privileged: true
       nodeSelector:
         type: bare-metal-external
-  - name: pull-common-instancetypes-cluster-functest-ubuntu-1.0
+  - name: pull-common-instancetypes-kubevirt-functest-ubuntu-1.0
     branches:
       - release-1.0
     always_run: false
     run_if_changed: "preferences/base/.*|preferences/components/.*|preferences/ubuntu/.*|tests/functests/.*|tests/vendor/.*|tests/go.*"
-    cluster: kubevirt-prow-workloads
+    cluster: prow-workloads
     decorate: true
     decoration_config:
       grace_period: 5m0s
@@ -240,7 +240,7 @@ presubmits:
         - /usr/local/bin/runner.sh
         - "/bin/sh"
         - "-c"
-        - "make cluster-up && make cluster-sync && make cluster-functest"
+        - "make kubevirt-up && make kubevirt-sync && make kubevirt-functest"
         env:
         - name: KUBEVIRT_MEMORY_SIZE
           value: 16G
@@ -255,12 +255,12 @@ presubmits:
           privileged: true
       nodeSelector:
         type: bare-metal-external
-  - name: pull-common-instancetypes-cluster-functest-validation-os-1.0
+  - name: pull-common-instancetypes-kubevirt-functest-validation-os-1.0
     branches:
       - release-1.0
     always_run: false
     run_if_changed: "preferences/base/.*|preferences/components/.*|preferences/windows/11/.*|tests/functests/.*|tests/vendor/.*|tests/go.*"
-    cluster: kubevirt-prow-workloads
+    cluster: prow-workloads
     decorate: true
     decoration_config:
       grace_period: 5m0s
@@ -282,7 +282,7 @@ presubmits:
         - "-c"
         - |
           cat "$QUAY_PASSWORD" | podman login --username $(cat "$QUAY_USER") --password-stdin=true quay.io
-          make cluster-up && make cluster-sync && make cluster-sync-containerdisks && make cluster-functest
+          make kubevirt-up && make kubevirt-sync && make kubevirt-sync-containerdisks && make kubevirt-functest
         env:
         - name: KUBEVIRT_MEMORY_SIZE
           value: 16G
@@ -311,7 +311,7 @@ presubmits:
       preset-docker-mirror: "true"
     annotations:
       testgrid-create-test-group: "false"
-    cluster: kubevirt-prow-workloads
+    cluster: prow-workloads
     spec:
       nodeSelector:
         type: bare-metal-external
@@ -330,3 +330,204 @@ presubmits:
           resources:
             requests:
               memory: "8Gi"
+  - name: pull-common-instancetypes-kubevirt-functest-debian-11-1.0
+    branches:
+      - release-1.0
+    always_run: false
+    run_if_changed: "preferences/base/.*|preferences/components/.*|preferences/linux/.*|preferences/linux-efi/.*|preferences/debian/.*|tests/functests/.*|tests/vendor/.*|tests/go.*"
+    cluster: prow-workloads
+    decorate: true
+    decoration_config:
+      grace_period: 5m0s
+      timeout: 1h0m0s
+    labels:
+      preset-bazel-cache: "true"
+      preset-bazel-unnested: "true"
+      preset-docker-mirror-proxy: "true"
+      preset-podman-in-container-enabled: "true"
+      preset-podman-shared-images: "true"
+      preset-shared-images: "true"
+    max_concurrency: 1
+    spec:
+      containers:
+        - command:
+            - /usr/local/bin/runner.sh
+            - "/bin/sh"
+            - "-c"
+            - "make kubevirt-up && make kubevirt-sync && make kubevirt-functest"
+          env:
+            - name: KUBEVIRT_MEMORY_SIZE
+              value: 16G
+            - name: FUNCTEST_EXTRA_ARGS
+              value: '--ginkgo.focus="VirtualMachine using a preference is able to boot a Linux guest with .*Debian 11"'
+          image: quay.io/kubevirtci/golang:v20240308-8fac017
+          name: ""
+          resources:
+            requests:
+              memory: 20Gi
+          securityContext:
+            privileged: true
+      nodeSelector:
+        type: bare-metal-external
+  - name: pull-common-instancetypes-kubevirt-functest-debian-12-1.0
+    branches:
+      - release-1.0
+    always_run: false
+    run_if_changed: "preferences/base/.*|preferences/components/.*|preferences/linux/.*|preferences/linux-efi/.*|preferences/debian/.*|tests/functests/.*|tests/vendor/.*|tests/go.*"
+    cluster: prow-workloads
+    decorate: true
+    decoration_config:
+      grace_period: 5m0s
+      timeout: 1h0m0s
+    labels:
+      preset-bazel-cache: "true"
+      preset-bazel-unnested: "true"
+      preset-docker-mirror-proxy: "true"
+      preset-podman-in-container-enabled: "true"
+      preset-podman-shared-images: "true"
+      preset-shared-images: "true"
+    max_concurrency: 1
+    spec:
+      containers:
+        - command:
+            - /usr/local/bin/runner.sh
+            - "/bin/sh"
+            - "-c"
+            - "make kubevirt-up && make kubevirt-sync && make kubevirt-functest"
+          env:
+            - name: KUBEVIRT_MEMORY_SIZE
+              value: 16G
+            - name: FUNCTEST_EXTRA_ARGS
+              value: '--ginkgo.focus="VirtualMachine using a preference is able to boot a Linux guest with .*Debian 12"'
+          image: quay.io/kubevirtci/golang:v20240308-8fac017
+          name: ""
+          resources:
+            requests:
+              memory: 20Gi
+          securityContext:
+            privileged: true
+      nodeSelector:
+        type: bare-metal-external
+  - name: pull-common-instancetypes-kubevirt-functest-debian-13-1.0
+    branches:
+      - release-1.0
+    always_run: false
+    run_if_changed: "preferences/base/.*|preferences/components/.*|preferences/linux/.*|preferences/linux-efi/.*|preferences/debian/.*|tests/functests/.*|tests/vendor/.*|tests/go.*"
+    cluster: prow-workloads
+    decorate: true
+    decoration_config:
+      grace_period: 5m0s
+      timeout: 1h0m0s
+    labels:
+      preset-bazel-cache: "true"
+      preset-bazel-unnested: "true"
+      preset-docker-mirror-proxy: "true"
+      preset-podman-in-container-enabled: "true"
+      preset-podman-shared-images: "true"
+      preset-shared-images: "true"
+    max_concurrency: 1
+    spec:
+      containers:
+        - command:
+            - /usr/local/bin/runner.sh
+            - "/bin/sh"
+            - "-c"
+            - "make kubevirt-up && make kubevirt-sync && make kubevirt-functest"
+          env:
+            - name: KUBEVIRT_MEMORY_SIZE
+              value: 16G
+            - name: FUNCTEST_EXTRA_ARGS
+              value: '--ginkgo.focus="VirtualMachine using a preference is able to boot a Linux guest with .*Debian 13"'
+          image: quay.io/kubevirtci/golang:v20240308-8fac017
+          name: ""
+          resources:
+            requests:
+              memory: 20Gi
+          securityContext:
+            privileged: true
+      nodeSelector:
+        type: bare-metal-external
+  - name: pull-common-instancetypes-kubevirt-functest-oracle-8-1.0
+    branches:
+      - release-1.0
+    always_run: false
+    run_if_changed: "preferences/base/.*|preferences/components/.*|preferences/linux/.*|preferences/linux-efi/.*|preferences/oraclelinux/.*|tests/functests/.*|tests/vendor/.*|tests/go.*"
+    cluster: prow-workloads
+    decorate: true
+    decoration_config:
+      grace_period: 5m0s
+      timeout: 1h0m0s
+    labels:
+      preset-bazel-cache: "true"
+      preset-bazel-unnested: "true"
+      preset-docker-mirror-proxy: "true"
+      preset-podman-in-container-enabled: "true"
+      preset-podman-shared-images: "true"
+      preset-shared-images: "true"
+      preset-kubevirtci-quay-credential: "true"
+    max_concurrency: 1
+    spec:
+      containers:
+        - command:
+            - /usr/local/bin/runner.sh
+            - "/bin/sh"
+            - "-c"
+            - |
+              cat "$QUAY_PASSWORD" | podman login --username $(cat "$QUAY_USER") --password-stdin=true quay.io
+              make kubevirt-up && make kubevirt-sync && make kubevirt-sync-containerdisks && make kubevirt-functest
+          env:
+            - name: KUBEVIRT_MEMORY_SIZE
+              value: 16G
+            - name: FUNCTEST_EXTRA_ARGS
+              value: '--ginkgo.focus="VirtualMachine using a preference is able to boot a Linux guest with .*Oracle Linux 8"'
+          image: quay.io/kubevirtci/golang:v20240308-8fac017
+          name: ""
+          resources:
+            requests:
+              memory: 20Gi
+          securityContext:
+            privileged: true
+      nodeSelector:
+        type: bare-metal-external
+  - name: pull-common-instancetypes-kubevirt-functest-oracle-9-1.0
+    branches:
+      - release-1.0
+    always_run: false
+    run_if_changed: "preferences/base/.*|preferences/components/.*|preferences/linux/.*|preferences/linux-efi/.*|preferences/oraclelinux/.*|tests/functests/.*|tests/vendor/.*|tests/go.*"
+    cluster: prow-workloads
+    decorate: true
+    decoration_config:
+      grace_period: 5m0s
+      timeout: 1h0m0s
+    labels:
+      preset-bazel-cache: "true"
+      preset-bazel-unnested: "true"
+      preset-docker-mirror-proxy: "true"
+      preset-podman-in-container-enabled: "true"
+      preset-podman-shared-images: "true"
+      preset-shared-images: "true"
+      preset-kubevirtci-quay-credential: "true"
+    max_concurrency: 1
+    spec:
+      containers:
+        - command:
+            - /usr/local/bin/runner.sh
+            - "/bin/sh"
+            - "-c"
+            - |
+              cat "$QUAY_PASSWORD" | podman login --username $(cat "$QUAY_USER") --password-stdin=true quay.io
+              make kubevirt-up && make kubevirt-sync && make kubevirt-sync-containerdisks && make kubevirt-functest
+          env:
+            - name: KUBEVIRT_MEMORY_SIZE
+              value: 16G
+            - name: FUNCTEST_EXTRA_ARGS
+              value: '--ginkgo.focus="VirtualMachine using a preference is able to boot a Linux guest with .*Oracle Linux 9"'
+          image: quay.io/kubevirtci/golang:v20240308-8fac017
+          name: ""
+          resources:
+            requests:
+              memory: 20Gi
+          securityContext:
+            privileged: true
+      nodeSelector:
+        type: bare-metal-external

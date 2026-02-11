@@ -69,12 +69,13 @@ kubectl get secret prow-workloads-cluster-automation \
 
 > [!WARNING]
 > It is advised to reduce the access for the service account to minimum permissions for the namespace where Prow needs to create jobs.
-> Making the serviceaccount admin is a compromise, so that we can create secrets and other changes if required 
+> Making the serviceaccount admin is a compromise, so that we can create secrets and other changes if required
 
 ```bash
 # make serviceaccount admin on namespace
 kubectl create rolebinding kubevirt-prow-workloads-admin \
-    --role=admin \
+    --namespace kubevirt-prow-jobs \
+    --clusterrole=admin \
     --serviceaccount=kubevirt-prow-jobs:prow-workloads-cluster-automation
 ```
 
@@ -173,7 +174,7 @@ The encrypted file will be available in `my-kubeconfig.gpg` in the current
 directory.
 
 
-[this Prow document]: https://github.com/kubernetes/test-infra/blob/master/prow/getting_started_deploy.md#Run-test-pods-in-different-clusters
+[this Prow document]: https://docs.prow.k8s.io/docs/getting-started-deploy/#run-test-pods-in-different-clusters
 [issue on project-infra]: https://github.com/kubevirt/project-infra/issues/new
 [kubeconfig encrypted as described here]: #encrypt
 [an example of a job configured with KubeVirtCI external provider]: https://github.com/kubevirt/project-infra/blob/bab947fa42f89f78238160d487bf047f4dea5c9f/github/ci/prow-deploy/files/jobs/kubevirt/kubevirt/kubevirt-periodics.yaml#L650

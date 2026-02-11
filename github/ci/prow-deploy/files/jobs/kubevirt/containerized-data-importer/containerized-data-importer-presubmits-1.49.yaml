@@ -4,7 +4,7 @@ presubmits:
     context: pull-cdi-unit-test
     branches:
       - release-v1.49
-    cluster: kubevirt-prow-workloads
+    cluster: prow-workloads
     always_run: true
     optional: true
     decorate: true
@@ -126,7 +126,7 @@ presubmits:
       timeout: 5h
       grace_period: 5m
     max_concurrency: 6
-    cluster: kubevirt-prow-workloads
+    cluster: prow-workloads
     labels:
       preset-dind-enabled: "true"
       preset-docker-mirror-proxy: "true"
@@ -146,7 +146,7 @@ presubmits:
             privileged: true
           resources:
             requests:
-              memory: "29Gi"
+              memory: "52Gi"
   - name: pull-containerized-data-importer-e2e-ceph-1.49
     context: pull-containerized-data-importer-e2e-ceph
     branches:
@@ -158,7 +158,7 @@ presubmits:
       timeout: 5h
       grace_period: 5m
     max_concurrency: 6
-    cluster: kubevirt-prow-workloads
+    cluster: prow-workloads
     labels:
       preset-dind-enabled: "true"
       preset-docker-mirror-proxy: "true"
@@ -178,4 +178,4 @@ presubmits:
             privileged: true
           resources:
             requests:
-              memory: "29Gi"
+              memory: "52Gi"

@@ -12,7 +12,7 @@ presubmits:
       preset-dind-enabled: "true"
       preset-docker-mirror: "true"
       preset-shared-images: "true"
-    cluster: kubevirt-prow-workloads
+    cluster: prow-workloads
     spec:
       nodeSelector:
         type: bare-metal-external
@@ -28,4 +28,4 @@ presubmits:
             privileged: true
           resources:
             requests:
-              memory: "29Gi"
+              memory: "52Gi"

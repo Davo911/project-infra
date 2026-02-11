@@ -8,6 +8,7 @@
 - [Labels that apply to all repos, for both issues and PRs](#labels-that-apply-to-all-repos-for-both-issues-and-prs)
 - [Labels that apply to all repos, only for issues](#labels-that-apply-to-all-repos-only-for-issues)
 - [Labels that apply to all repos, only for PRs](#labels-that-apply-to-all-repos-only-for-prs)
+- [Labels that apply to kubevirt/containerized-data-importer, only for PRs](#labels-that-apply-to-kubevirtcontainerized-data-importer-only-for-prs)
 - [Labels that apply to kubevirt/hyperconverged-cluster-operator, only for PRs](#labels-that-apply-to-kubevirthyperconverged-cluster-operator-only-for-prs)
 - [Labels that apply to kubevirt/kubevirt, for both issues and PRs](#labels-that-apply-to-kubevirtkubevirt-for-both-issues-and-prs)
 - [Labels that apply to kubevirt/kubevirt, only for issues](#labels-that-apply-to-kubevirtkubevirt-only-for-issues)
@@ -15,7 +16,9 @@
 - [Labels that apply to kubevirt/kubevirt-tutorial, only for PRs](#labels-that-apply-to-kubevirtkubevirt-tutorial-only-for-prs)
 - [Labels that apply to kubevirt/kubevirt.github.io, for both issues and PRs](#labels-that-apply-to-kubevirtkubevirt.github.io-for-both-issues-and-prs)
 - [Labels that apply to kubevirt/kubevirt.github.io, only for PRs](#labels-that-apply-to-kubevirtkubevirt.github.io-only-for-prs)
+- [Labels that apply to kubevirt/kubevirtci, only for PRs](#labels-that-apply-to-kubevirtkubevirtci-only-for-prs)
 - [Labels that apply to kubevirt/project-infra, for both issues and PRs](#labels-that-apply-to-kubevirtproject-infra-for-both-issues-and-prs)
+- [Labels that apply to kubevirt/project-infra, only for PRs](#labels-that-apply-to-kubevirtproject-infra-only-for-prs)
 - [Labels that apply to nmstate/kubernetes-nmstate, for both issues and PRs](#labels-that-apply-to-nmstatekubernetes-nmstate-for-both-issues-and-prs)
 
 
@@ -50,6 +53,7 @@ larger set of contributors to apply/remove them.
 | <a id="kind/api-change" href="#kind/api-change">`kind/api-change`</a> | Categorizes issue or PR as related to adding, removing, or otherwise changing an API| anyone |  [label](https://prow.ci.kubevirt.io/command-help#label) |
 | <a id="kind/blocker" href="#kind/blocker">`kind/blocker`</a> | | anyone |  [label](https://prow.ci.kubevirt.io/command-help#label) |
 | <a id="kind/bug" href="#kind/bug">`kind/bug`</a> | | anyone |  [label](https://prow.ci.kubevirt.io/command-help#label) |
+| <a id="kind/cleanup" href="#kind/cleanup">`kind/cleanup`</a> | Categorizes issue or PR as related to cleaning up code, process, or technical debt. <br><br> This was previously `sig/code-quality`, | anyone |  [label](https://prow.ci.kubevirt.io/command-help#label) |
 | <a id="kind/deprecation" href="#kind/deprecation">`kind/deprecation`</a> | Indicates the PR/issue deprecates a feature that will be removed in a subsequent release.| anyone |  [label](https://prow.ci.kubevirt.io/command-help#label) |
 | <a id="kind/enhancement" href="#kind/enhancement">`kind/enhancement`</a> | | anyone |  [label](https://prow.ci.kubevirt.io/command-help#label) |
 | <a id="kind/failing-test" href="#kind/failing-test">`kind/failing-test`</a> | Categorizes issue or PR as related to a failing test.| anyone |  [label](https://prow.ci.kubevirt.io/command-help#label) |
@@ -61,12 +65,13 @@ larger set of contributors to apply/remove them.
 | <a id="lifecycle/frozen" href="#lifecycle/frozen">`lifecycle/frozen`</a> | Indicates that an issue or PR should not be auto-closed due to staleness.| prow |  [lifecycle](https://prow.ci.kubevirt.io/command-help#lifecycle) |
 | <a id="lifecycle/rotten" href="#lifecycle/rotten">`lifecycle/rotten`</a> | Denotes an issue or PR that has aged beyond stale and will be auto-closed.| prow |  [lifecycle](https://prow.ci.kubevirt.io/command-help#lifecycle) |
 | <a id="lifecycle/stale" href="#lifecycle/stale">`lifecycle/stale`</a> | Denotes an issue or PR has remained open with no activity and has become stale.| prow |  [lifecycle](https://prow.ci.kubevirt.io/command-help#lifecycle) |
+| <a id="priority/backlog" href="#priority/backlog">`priority/backlog`</a> | Indicate that the issue or PR is a lower priority and can be worked on in the future| anyone |  [label](https://prow.ci.kubevirt.io/command-help#label) |
 | <a id="priority/critical-urgent" href="#priority/critical-urgent">`priority/critical-urgent`</a> | Categorizes an issue or pull request as critical and of urgent priority.| anyone |  [label](https://prow.ci.kubevirt.io/command-help#label) |
 | <a id="sig/api" href="#sig/api">`sig/api`</a> | Denotes an issue or PR that relates to changes in api.| anyone |  [label](https://prow.ci.kubevirt.io/command-help#label) |
 | <a id="sig/buildsystem" href="#sig/buildsystem">`sig/buildsystem`</a> | Denotes an issue or PR that relates to changes in the build system.| anyone |  [label](https://prow.ci.kubevirt.io/command-help#label) |
 | <a id="sig/ci" href="#sig/ci">`sig/ci`</a> | Denotes an issue or PR as being related to sig-ci, marks changes to the CI system.| anyone |  [label](https://prow.ci.kubevirt.io/command-help#label) |
-| <a id="sig/code-quality" href="#sig/code-quality">`sig/code-quality`</a> | | anyone |  [label](https://prow.ci.kubevirt.io/command-help#label) |
-| <a id="sig/compute" href="#sig/compute">`sig/compute`</a> |  <br><br> This was previously `topic/virtualization`, `sig-virtualization`, | anyone |  [label](https://prow.ci.kubevirt.io/command-help#label) |
+| <a id="sig/compute" href="#sig/compute">`sig/compute`</a> |  <br><br> This was previously `topic/virtualization`, `sig-virtualization`, `sig/virtualization`, | anyone |  [label](https://prow.ci.kubevirt.io/command-help#label) |
+| <a id="sig/control-plane" href="#sig/control-plane">`sig/control-plane`</a> | | anyone |  [label](https://prow.ci.kubevirt.io/command-help#label) |
 | <a id="sig/documentation" href="#sig/documentation">`sig/documentation`</a> | | anyone |  [label](https://prow.ci.kubevirt.io/command-help#label) |
 | <a id="sig/network" href="#sig/network">`sig/network`</a> |  <br><br> This was previously `topic/network`, | anyone |  [label](https://prow.ci.kubevirt.io/command-help#label) |
 | <a id="sig/observability" href="#sig/observability">`sig/observability`</a> | Denotes an issue or PR that relates to observability.| anyone |  [label](https://prow.ci.kubevirt.io/command-help#label) |
@@ -84,9 +89,13 @@ larger set of contributors to apply/remove them.
 | <a id="spam" href="#spam">`spam`</a> | Categorizes issues or PRs as an invalid contribution| anyone |  [label](https://prow.ci.kubevirt.io/command-help#label) |
 | <a id="triage/accepted" href="#triage/accepted">`triage/accepted`</a> | Indicates an issue or PR is ready to be actively worked on.| org members |  [label](https://prow.ci.kubevirt.io/command-help#label) |
 | <a id="triage/duplicate" href="#triage/duplicate">`triage/duplicate`</a> | Indicates an issue is a duplicate of other open issue.| anyone | |
+| <a id="triage/infra-issue" href="#triage/infra-issue">`triage/infra-issue`</a> | Indicates an issue was caused by failures in the infrastructure.| anyone | |
 | <a id="triage/needs-information" href="#triage/needs-information">`triage/needs-information`</a> | Indicates an issue needs more information in order to work on it.| anyone | |
 | <a id="triage/not-reproducible" href="#triage/not-reproducible">`triage/not-reproducible`</a> | Indicates an issue can not be reproduced as described.| anyone | |
 | <a id="triage/unresolved" href="#triage/unresolved">`triage/unresolved`</a> | Indicates an issue that can not or will not be resolved.| anyone | |
+| <a id="wg/arch-arm" href="#wg/arch-arm">`wg/arch-arm`</a> | Denotes an issue or PR that relates to the ARM architecture working group.| anyone |  [label](https://prow.ci.kubevirt.io/command-help#label) |
+| <a id="wg/arch-s390x" href="#wg/arch-s390x">`wg/arch-s390x`</a> | Denotes an issue or PR that relates to the s390x architecture working group.| anyone |  [label](https://prow.ci.kubevirt.io/command-help#label) |
+| <a id="wg/code-quality" href="#wg/code-quality">`wg/code-quality`</a> | Denotes an issue or PR that relates to the code-quality working group.| anyone |  [label](https://prow.ci.kubevirt.io/command-help#label) |
 
 ## Labels that apply to all repos, only for issues
 
@@ -95,25 +104,35 @@ larger set of contributors to apply/remove them.
 | <a id="good first issue" href="#good first issue">`good first issue`</a> | Identifies an issue that has been specifically created or selected for first-time contributors.| prow |  [help](https://prow.ci.kubevirt.io/command-help#help) |
 | <a id="good-first-issue" href="#good-first-issue">`good-first-issue`</a> | Identifies an issue that has been specifically created or selected for first-time contributors.|  | |
 | <a id="help wanted" href="#help wanted">`help wanted`</a> | Identifies an issue that has been specifically created or selected for new contributors.| prow |  [help](https://prow.ci.kubevirt.io/command-help#help) |
-| <a id="triage/build-watcher" href="#triage/build-watcher">`triage/build-watcher`</a> | Discovered by a kubevirt build-watcher. Pay attention to these issues to keep CI healthy. <br><br> This was previously `triage/build-officer`, | anyone |  [label](https://prow.ci.kubevirt.io/command-help#label) |
+| <a id="triage/build-watcher" href="#triage/build-watcher">`triage/build-watcher`</a> | DEPRECATED <br><br> This was previously `triage/build-officer`, | anyone |  [label](https://prow.ci.kubevirt.io/command-help#label) |
 
 ## Labels that apply to all repos, only for PRs
 
 | Name | Description | Added By | Prow Plugin |
 | ---- | ----------- | -------- | --- |
 | <a id="approved" href="#approved">`approved`</a> | Indicates a PR has been approved by an approver from all required OWNERS files.| approvers |  [approve](https://prow.ci.kubevirt.io/command-help#approve) |
+| <a id="approved-vep" href="#approved-vep">`approved-vep`</a> | Indicates that a PR is tied to an approved VEP and is prioritized.| approvers |  [label](https://prow.ci.kubevirt.io/command-help#label) |
 | <a id="dco-signoff  no" href="#dco-signoff  no">`dco-signoff: no`</a> | Indicates the PR's author has not DCO signed all their commits.| prow |  [dco](https://prow.ci.kubevirt.io/command-help#dco) |
 | <a id="dco-signoff  yes" href="#dco-signoff  yes">`dco-signoff: yes`</a> | Indicates the PR's author has DCO signed all their commits.| prow |  [dco](https://prow.ci.kubevirt.io/command-help#dco) |
 | <a id="do-not-merge/hold" href="#do-not-merge/hold">`do-not-merge/hold`</a> | Indicates that a PR should not merge because someone has issued a /hold command.| anyone |  [hold](https://prow.ci.kubevirt.io/command-help#hold) |
+| <a id="do-not-merge/invalid-commit-message" href="#do-not-merge/invalid-commit-message">`do-not-merge/invalid-commit-message`</a> | Indicates that a PR should not merge because it has an invalid commit message.| prow |  [invalidcommitmsg](https://prow.ci.kubevirt.io/command-help#invalidcommitmsg) |
+| <a id="do-not-merge/invalid-owners-file" href="#do-not-merge/invalid-owners-file">`do-not-merge/invalid-owners-file`</a> | Indicates that a PR should not merge because it has an invalid OWNERS file in it.| prow |  [verify-owners](https://prow.ci.kubevirt.io/command-help#verify-owners) |
 | <a id="do-not-merge/release-note-label-needed" href="#do-not-merge/release-note-label-needed">`do-not-merge/release-note-label-needed`</a> | Indicates that a PR should not merge because it's missing one of the release note labels. <br><br> This was previously `needs/release-note`, | prow |  [release-note](https://prow.ci.kubevirt.io/command-help#release-note) |
 | <a id="do-not-merge/work-in-progress" href="#do-not-merge/work-in-progress">`do-not-merge/work-in-progress`</a> | Indicates that a PR should not merge because it is a work in progress.| prow |  [wip](https://prow.ci.kubevirt.io/command-help#wip) |
 | <a id="lgtm" href="#lgtm">`lgtm`</a> | Indicates that a PR is ready to be merged.| reviewers or members |  [lgtm](https://prow.ci.kubevirt.io/command-help#lgtm) |
+| <a id="needs-approver-review" href="#needs-approver-review">`needs-approver-review`</a> | Indicates that a PR requires a review from an approver.| kubevirt-bot |  [label](https://prow.ci.kubevirt.io/command-help#label) |
 | <a id="needs-ok-to-test" href="#needs-ok-to-test">`needs-ok-to-test`</a> | Indicates a PR that requires an org member to verify it is safe to test.| prow |  [trigger](https://prow.ci.kubevirt.io/command-help#trigger) |
 | <a id="needs-rebase" href="#needs-rebase">`needs-rebase`</a> | Indicates a PR cannot be merged because it has merge conflicts with HEAD.| prow |  [needs-rebase](https://prow.ci.kubevirt.io/command-help#needs-rebase) |
 | <a id="ok-to-test" href="#ok-to-test">`ok-to-test`</a> | Indicates a non-member PR verified by an org member that is safe to test.| prow |  [trigger](https://prow.ci.kubevirt.io/command-help#trigger) |
 | <a id="release-note" href="#release-note">`release-note`</a> | Denotes a PR that will be considered when it comes time to generate release notes.| prow |  [release-note](https://prow.ci.kubevirt.io/command-help#release-note) |
 | <a id="release-note-action-required" href="#release-note-action-required">`release-note-action-required`</a> | Denotes a PR that introduces potentially breaking changes that require user action.| prow |  [releasenote](https://prow.ci.kubevirt.io/command-help#releasenote) |
 | <a id="release-note-none" href="#release-note-none">`release-note-none`</a> | Denotes a PR that doesn't merit a release note.| prow |  [release-note](https://prow.ci.kubevirt.io/command-help#release-note) |
+
+## Labels that apply to kubevirt/containerized-data-importer, only for PRs
+
+| Name | Description | Added By | Prow Plugin |
+| ---- | ----------- | -------- | --- |
+| <a id="skip-review" href="#skip-review">`skip-review`</a> | Indicates a PR is trusted, used by tide for auto-merging PRs.| kubevirt-bot | |
 
 ## Labels that apply to kubevirt/hyperconverged-cluster-operator, only for PRs
 
@@ -132,6 +151,7 @@ larger set of contributors to apply/remove them.
 | <a id="area/launcher" href="#area/launcher">`area/launcher`</a> | |  | |
 | <a id="area/monitoring" href="#area/monitoring">`area/monitoring`</a> | |  | |
 | <a id="area/operator" href="#area/operator">`area/operator`</a> | |  | |
+| <a id="area/testing" href="#area/testing">`area/testing`</a> |  <br><br> This was previously `topic/testing`, |  | |
 | <a id="area/virtctl" href="#area/virtctl">`area/virtctl`</a> | |  | |
 | <a id="distro/kubernetes" href="#distro/kubernetes">`distro/kubernetes`</a> |  <br><br> This was previously `distro/kuberenetes`, |  | |
 | <a id="distro/openshift" href="#distro/openshift">`distro/openshift`</a> | |  | |
@@ -139,7 +159,6 @@ larger set of contributors to apply/remove them.
 | <a id="for/developers" href="#for/developers">`for/developers`</a> | |  | |
 | <a id="for/users" href="#for/users">`for/users`</a> | |  | |
 | <a id="needs/documentation" href="#needs/documentation">`needs/documentation`</a> | |  | |
-| <a id="priority/backlog" href="#priority/backlog">`priority/backlog`</a> | |  | |
 | <a id="release-blocker" href="#release-blocker">`release-blocker`</a> | Indicates that a PR or issue is blocking a release from a specific branch.| prow |  [release-blocker](https://prow.ci.kubevirt.io/command-help#release-blocker) |
 | <a id="research-needed" href="#research-needed">`research-needed`</a> | |  | |
 | <a id="topic/api" href="#topic/api">`topic/api`</a> | |  | |
@@ -152,7 +171,6 @@ larger set of contributors to apply/remove them.
 | <a id="topic/integration" href="#topic/integration">`topic/integration`</a> | |  | |
 | <a id="topic/packaging" href="#topic/packaging">`topic/packaging`</a> | |  | |
 | <a id="topic/scheduling" href="#topic/scheduling">`topic/scheduling`</a> | |  | |
-| <a id="topic/testing" href="#topic/testing">`topic/testing`</a> | |  | |
 | <a id="wontfix" href="#wontfix">`wontfix`</a> | |  | |
 
 ## Labels that apply to kubevirt/kubevirt, only for issues
@@ -166,6 +184,7 @@ larger set of contributors to apply/remove them.
 | Name | Description | Added By | Prow Plugin |
 | ---- | ----------- | -------- | --- |
 | <a id="kind/build-change" href="#kind/build-change">`kind/build-change`</a> | Categorizes PRs as related to changing build files of virt-* components| anyone |  [label](https://prow.ci.kubevirt.io/command-help#label) |
+| <a id="skip-review" href="#skip-review">`skip-review`</a> | Indicates a PR is trusted, used by tide for auto-merging PRs.| kubevirt-bot | |
 
 ## Labels that apply to kubevirt/kubevirt-tutorial, only for PRs
 
@@ -186,6 +205,12 @@ larger set of contributors to apply/remove them.
 | ---- | ----------- | -------- | --- |
 | <a id="kind/blog" href="#kind/blog">`kind/blog`</a> | Label for blog entries| anyone |  [label](https://prow.ci.kubevirt.io/command-help#label) |
 
+## Labels that apply to kubevirt/kubevirtci, only for PRs
+
+| Name | Description | Added By | Prow Plugin |
+| ---- | ----------- | -------- | --- |
+| <a id="skip-review" href="#skip-review">`skip-review`</a> | Indicates a PR is trusted, used by tide for auto-merging PRs.| kubevirt-bot | |
+
 ## Labels that apply to kubevirt/project-infra, for both issues and PRs
 
 | Name | Description | Added By | Prow Plugin |
@@ -194,6 +219,12 @@ larger set of contributors to apply/remove them.
 | <a id="area/flakefinder" href="#area/flakefinder">`area/flakefinder`</a> | Issues and PRs concerning FlakeFinder, a tool to find flaky tests| anyone |  [label](https://prow.ci.kubevirt.io/command-help#label) |
 | <a id="area/monitoring" href="#area/monitoring">`area/monitoring`</a> | Issues and PRs concerning monitoring of Prow components| anyone |  [label](https://prow.ci.kubevirt.io/command-help#label) |
 | <a id="area/prow" href="#area/prow">`area/prow`</a> | Issues and PRs concerning KubeVirt Prow, i.e. configuration, setup etc.| anyone |  [label](https://prow.ci.kubevirt.io/command-help#label) |
+
+## Labels that apply to kubevirt/project-infra, only for PRs
+
+| Name | Description | Added By | Prow Plugin |
+| ---- | ----------- | -------- | --- |
+| <a id="skip-review" href="#skip-review">`skip-review`</a> | Indicates a PR is trusted, used by tide for auto-merging PRs.| kubevirt-bot | |
 
 ## Labels that apply to nmstate/kubernetes-nmstate, for both issues and PRs
 

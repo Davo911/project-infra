@@ -9,7 +9,7 @@ presubmits:
       always_run: true
       optional: false
       decorate: true
-      cluster: kubevirt-prow-workloads
+      cluster: prow-workloads
       decoration_config:
         timeout: 3h
         grace_period: 5m
@@ -22,12 +22,12 @@ presubmits:
         nodeSelector:
           type: bare-metal-external
         containers:
-          - image: quay.io/kubevirtci/bootstrap:v20240829-fb5890c
+          - image: quay.io/kubevirtci/bootstrap:v20251218-e7a7fc9
             securityContext:
               privileged: true
             resources:
               requests:
-                memory: "29Gi"
+                memory: "52Gi"
             command:
               - "/usr/local/bin/runner.sh"
               - "/bin/sh"
@@ -36,4 +36,57 @@ presubmits:
                 make cluster-up
                 make cluster-sync
                 make functest
-
+    - name: pull-kubesecondarydns-unit-test-s390x
+      skip_branches:
+        - release-\d+\.\d+
+      annotations:
+        fork-per-release: "true"
+      always_run: true
+      optional: false
+      decorate: true
+      cluster: prow-s390x-workloads
+      decoration_config:
+        grace_period: 5m0s
+        timeout: 2h0m0s
+      spec:
+        containers:
+        - command:
+          - /usr/local/bin/runner.sh
+          - /bin/sh
+          - -c
+          - make test
+          image: quay.io/kubevirtci/golang:v20251218-e7a7fc9
+          name: ""
+          resources:
+            requests:
+              memory: 500Mi
+          securityContext:
+            privileged: true
+    - name: pull-kubesecondarydns-build-s390x
+      skip_branches:
+        - release-\d+\.\d+
+      annotations:
+        fork-per-release: "true"
+      always_run: true
+      optional: false
+      decorate: true
+      cluster: prow-s390x-workloads
+      decoration_config:
+        grace_period: 5m0s
+        timeout: 2h0m0s
+      labels:
+        preset-podman-in-container-enabled: "true"
+      spec:
+        containers:
+        - command:
+          - /usr/local/bin/runner.sh
+          - /bin/sh
+          - -c
+          - make build
+          image: quay.io/kubevirtci/golang:v20251218-e7a7fc9
+          name: ""
+          resources:
+            requests:
+              memory: 500Mi
+          securityContext:
+            privileged: true

@@ -6,15 +6,15 @@
 
 approvers:
 - aburdenthehand
-- alonakaplan
-- cwilkers
-- davidvossel
 - fabiand
+- jean-edouard
 - rmohr
+- rthallisey
+- stu-gott
 - vladikr
+- xpivarc
 options: {}
 reviewers:
 - aburdenthehand
-- cwilkers
+- dhiller
 - jean-edouard
-- jobbler

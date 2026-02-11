@@ -7,8 +7,8 @@
 approvers:
 - awels
 - brianmcarey
-- davidvossel
 - dhiller
+- dollierp
 - enp0s3
 - jean-edouard
 - phoracek
@@ -21,6 +21,7 @@ options: {}
 reviewers:
 - brianmcarey
 - dhiller
+- dollierp
 - ormergi
 - oshoval
 - qinqon

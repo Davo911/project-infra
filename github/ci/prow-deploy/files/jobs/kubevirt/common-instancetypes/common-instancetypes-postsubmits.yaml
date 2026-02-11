@@ -15,12 +15,12 @@ postsubmits:
         preset-kubevirtci-quay-credential: "true"
       annotations:
         testgrid-create-test-group: "false"
-      cluster: kubevirt-prow-workloads
+      cluster: prow-workloads
       spec:
         nodeSelector:
           type: bare-metal-external
         containers:
-          - image: quay.io/kubevirtci/golang:v20240829-fb5890c
+          - image: quay.io/kubevirtci/golang:v20251218-e7a7fc9
             env:
               - name: COMMON_INSTANCETYPES_CRI
                 value: podman

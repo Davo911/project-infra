@@ -20,7 +20,7 @@ presubmits:
       cluster: kubevirt-prow-control-plane
       spec:
         containers:
-          - image: quay.io/kubevirtci/golang:v20240829-fb5890c
+          - image: quay.io/kubevirtci/golang:v20251218-e7a7fc9
             securityContext:
               privileged: true
             env:
@@ -47,58 +47,20 @@ presubmits:
         preset-podman-in-container-enabled: "true"
         preset-docker-mirror-proxy: "true"
         preset-shared-images: "true"
-      cluster: kubevirt-prow-workloads
+      cluster: prow-workloads
       spec:
         nodeSelector:
           type: bare-metal-external
         containers:
-          - image: quay.io/kubevirtci/golang:v20240829-fb5890c
+          - image: quay.io/kubevirtci/golang:v20251218-e7a7fc9
             securityContext:
               privileged: true
             resources:
               requests:
-                memory: "29Gi"
+                memory: "52Gi"
             env:
               - name: GIMME_GO_VERSION
                 value: "1.18"
-            command:
-              - "/usr/local/bin/runner.sh"
-              - "/bin/sh"
-              - "-c"
-              - "automation/check-patch.e2e-k8s.sh"
-
-    - name: pull-kubernetes-nmstate-e2e-handler-k8s-future
-      skip_branches:
-        - release-\d+\.\d+
-      annotations:
-        fork-per-release: "true"
-      always_run: true
-      optional: true
-      decorate: true
-      decoration_config:
-        timeout: 3h
-        grace_period: 5m
-      max_concurrency: 6
-      labels:
-        preset-podman-in-container-enabled: "true"
-        preset-docker-mirror-proxy: "true"
-        preset-shared-images: "true"
-      cluster: kubevirt-prow-workloads
-      spec:
-        nodeSelector:
-          type: bare-metal-external
-        containers:
-          - image: quay.io/kubevirtci/golang:v20240829-fb5890c
-            securityContext:
-              privileged: true
-            resources:
-              requests:
-                memory: "29Gi"
-            env:
-              - name: GIMME_GO_VERSION
-                value: "1.18"
-              - name: NMSTATE_PIN
-                value: "future"
             command:
               - "/usr/local/bin/runner.sh"
               - "/bin/sh"
@@ -123,7 +85,7 @@ presubmits:
         preset-shared-images: "true"
       spec:
         containers:
-          - image: quay.io/kubevirtci/bootstrap:v20240829-fb5890c
+          - image: quay.io/kubevirtci/bootstrap:v20251218-e7a7fc9
             securityContext:
               privileged: true
             command:
@@ -151,17 +113,17 @@ presubmits:
         preset-podman-in-container-enabled: "true"
         preset-docker-mirror-proxy: "true"
         preset-shared-images: "true"
-      cluster: kubevirt-prow-workloads
+      cluster: prow-workloads
       spec:
         nodeSelector:
           type: bare-metal-external
         containers:
-          - image: quay.io/kubevirtci/golang:v20240829-fb5890c
+          - image: quay.io/kubevirtci/golang:v20251218-e7a7fc9
             securityContext:
               privileged: true
             resources:
               requests:
-                memory: "29Gi"
+                memory: "52Gi"
             env:
               - name: GIMME_GO_VERSION
                 value: "1.16"
@@ -186,17 +148,17 @@ presubmits:
         preset-podman-in-container-enabled: "true"
         preset-docker-mirror-proxy: "true"
         preset-shared-images: "true"
-      cluster: kubevirt-prow-workloads
+      cluster: prow-workloads
       spec:
         nodeSelector:
           type: bare-metal-external
         containers:
-          - image: quay.io/kubevirtci/golang:v20240829-fb5890c
+          - image: quay.io/kubevirtci/golang:v20251218-e7a7fc9
             securityContext:
               privileged: true
             resources:
               requests:
-                memory: "29Gi"
+                memory: "52Gi"
             env:
               - name: GIMME_GO_VERSION
                 value: "1.16"

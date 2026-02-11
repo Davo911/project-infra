@@ -89,7 +89,7 @@ if [[ "${PODMAN_IN_CONTAINER_ENABLED}" == "true" ]]; then
     )
     # the service can be started but the socket not ready, wait for ready
     WAIT_N=0
-    MAX_WAIT=20
+    MAX_WAIT=30
     while true; do
         # wait for podman socket to be ready
         curl --unix-socket "${PODMAN_SOCKET}" http://d/v3.0.0/libpod/info >/dev/null 2>&1 && break
@@ -122,6 +122,9 @@ source /google-cloud-sdk/path.bash.inc
 if [[ -n "${GOOGLE_APPLICATION_CREDENTIALS:-}" ]]; then
   gcloud auth activate-service-account --key-file="${GOOGLE_APPLICATION_CREDENTIALS}" || true
 fi
+
+# Kind cluster providers expect /var/log/audit to be present
+mkdir -p /var/log/audit
 
 # Set up Container Registry Auth file
 mkdir -p "${HOME}/containers" && echo "{}" > "${HOME}/containers/auth.json"

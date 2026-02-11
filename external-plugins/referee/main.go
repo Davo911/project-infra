@@ -22,23 +22,24 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"github.com/shurcooL/githubv4"
-	"github.com/sirupsen/logrus"
-	"golang.org/x/oauth2"
-	"k8s.io/test-infra/pkg/flagutil"
-	"k8s.io/test-infra/prow/config/secret"
-	prowflagutil "k8s.io/test-infra/prow/flagutil"
-	"k8s.io/test-infra/prow/interrupts"
-	"k8s.io/test-infra/prow/pluginhelp/externalplugins"
-	"kubevirt.io/project-infra/external-plugins/referee/ghgraphql"
-	"kubevirt.io/project-infra/external-plugins/referee/metrics"
-	"kubevirt.io/project-infra/external-plugins/referee/server"
 	"net/http"
 	"os"
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/shurcooL/githubv4"
+	"github.com/sirupsen/logrus"
+	"golang.org/x/oauth2"
+	"k8s.io/test-infra/pkg/flagutil"
+	"kubevirt.io/project-infra/external-plugins/referee/ghgraphql"
+	"kubevirt.io/project-infra/external-plugins/referee/metrics"
+	"kubevirt.io/project-infra/external-plugins/referee/server"
+	"sigs.k8s.io/prow/pkg/config/secret"
+	prowflagutil "sigs.k8s.io/prow/pkg/flagutil"
+	"sigs.k8s.io/prow/pkg/interrupts"
+	"sigs.k8s.io/prow/pkg/pluginhelp/externalplugins"
 )
 
 func init() {
@@ -49,10 +50,10 @@ func init() {
 type options struct {
 	port int
 
-	dryRun bool
-	github prowflagutil.GitHubOptions
-	labels prowflagutil.Strings
+	dryRun                               bool
+	maximumNumberOfAllowedRetestComments int
 
+	github                    prowflagutil.GitHubOptions
 	webhookSecretFile         string
 	team                      string
 	initialRetestRepositories string
@@ -100,6 +101,7 @@ func gatherOptions() options {
 	fs.StringVar(&o.webhookSecretFile, "hmac-secret-file", "/etc/webhook/hmac", "Path to the file containing the GitHub HMAC secret.")
 	fs.StringVar(&o.team, "team", "sig-buildsystem", "Name of the GitHub team that should be pinged.")
 	fs.StringVar(&o.initialRetestRepositories, "initial-retest-repositories", "kubevirt/kubevirt", "Comma-separated names of GitHub repositories to fetch the number of retest comments for open lgtm/approved pull request in format org/repo1,org/repo2,... ")
+	fs.IntVar(&o.maximumNumberOfAllowedRetestComments, "max-no-of-allowed-retest-comments", server.DefaultMaximumNumberOfAllowedRetestComments, "Maximum number of allowed retest comments.")
 	for _, group := range []flagutil.OptionGroup{&o.github} {
 		group.AddFlags(fs)
 	}
@@ -119,7 +121,10 @@ func main() {
 		logrus.WithError(err).Fatal("Error starting secrets agent.")
 	}
 
-	githubClient := o.github.GitHubClientWithAccessToken(string(secret.GetSecret(o.github.TokenPath)))
+	githubClient, err := o.github.GitHubClientWithAccessToken(string(secret.GetSecret(o.github.TokenPath)))
+	if err != nil {
+		logrus.WithError(err).Fatal("error getting github client")
+	}
 
 	botUserData, err := githubClient.BotUser()
 	if err != nil {
@@ -148,7 +153,8 @@ func main() {
 		GHGraphQLClient: gitHubGQLClient,
 		Log:             log,
 
-		DryRun: o.dryRun,
+		DryRun:                               o.dryRun,
+		MaximumNumberOfAllowedRetestComments: o.maximumNumberOfAllowedRetestComments,
 	}
 
 	mux := http.NewServeMux()

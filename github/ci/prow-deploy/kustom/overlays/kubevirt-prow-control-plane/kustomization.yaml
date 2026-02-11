@@ -31,6 +31,12 @@ patches:
       version: v1
       group: apps
       kind: Deployment
+      name: test-subset
+    path: patches/JsonRFC6902/test-subset-deployment.yaml
+  - target:
+      version: v1
+      group: apps
+      kind: Deployment
       name: gcsweb
     path: patches/JsonRFC6902/gcsweb-deployment.yaml
   - target:
@@ -202,6 +208,12 @@ patches:
   - target:
       group: rbac.authorization.k8s.io
       version: v1
+      kind: ClusterRoleBinding
+      name: test-subset
+    path: patches/JsonRFC6902/rolebinding-subject-prow-namespace.yaml
+  - target:
+      group: rbac.authorization.k8s.io
+      version: v1
       kind: RoleBinding
       namespace: test-pods
       name: .*
@@ -303,6 +315,11 @@ secretGenerator:
     files:
       - secrets/service-account.json
     type: Opaque
+  - name: virtci-gcs
+    namespace: kubevirt-prow-jobs
+    files:
+      - secrets/virtci-service-account.json
+    type: Opaque
   - name: slack-token
     files:
       - token=secrets/slack-token
@@ -357,12 +374,6 @@ secretGenerator:
     # githubCommenterToken
     files:
       - oauth=secrets/commenter-oauth-token
-    type: Opaque
-  - name: botreview-oauth-token
-    namespace: kubevirt-prow
-    # githubBotreviewToken
-    files:
-    - oauth=secrets/botreview-oauth-token
     type: Opaque
   - name: kubevirtci-coveralls-token
     namespace: kubevirt-prow-jobs

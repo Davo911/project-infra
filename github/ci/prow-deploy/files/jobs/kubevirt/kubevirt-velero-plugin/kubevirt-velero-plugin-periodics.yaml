@@ -17,13 +17,12 @@ periodics:
     - org: kubevirt
       repo: kubevirt-velero-plugin
       base_ref: main
-      work_dir: true
-  cluster: kubevirt-prow-workloads
+  cluster: prow-workloads
   spec:
     nodeSelector:
       type: bare-metal-external
     containers:
-    - image: quay.io/kubevirtci/bootstrap:v20240829-fb5890c
+    - image: quay.io/kubevirtci/bootstrap:v20251218-e7a7fc9
       command:
         - "/usr/local/bin/runner.sh"
         - "/bin/bash"
@@ -34,4 +33,4 @@ periodics:
         privileged: true
       resources:
         requests:
-          memory: "29Gi"
+          memory: "52Gi"

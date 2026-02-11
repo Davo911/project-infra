@@ -12,7 +12,7 @@ presubmits:
       decoration_config:
         timeout: 3h
         grace_period: 5m
-      cluster: kubevirt-prow-workloads
+      cluster: prow-workloads
       max_concurrency: 6
       labels:
         preset-podman-in-container-enabled: "true"
@@ -22,7 +22,7 @@ presubmits:
         nodeSelector:
           type: bare-metal-external
         containers:
-          - image: quay.io/kubevirtci/bootstrap:v20240829-fb5890c
+          - image: quay.io/kubevirtci/bootstrap:v20251218-e7a7fc9
             securityContext:
               privileged: true
             resources:

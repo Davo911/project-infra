@@ -17,7 +17,7 @@ presubmits:
       preset-docker-mirror-proxy: "true"
     spec:
       containers:
-        - image: quay.io/kubevirtci/bootstrap:v20240829-fb5890c
+        - image: quay.io/kubevirtci/bootstrap:v20251218-e7a7fc9
           command:
             - "/usr/local/bin/runner.sh"
             - "/bin/sh"
@@ -47,7 +47,7 @@ presubmits:
       preset-bazel-cache: "true"
     spec:
       containers:
-        - image: quay.io/kubevirtci/bootstrap:v20240829-fb5890c
+        - image: quay.io/kubevirtci/bootstrap:v20251218-e7a7fc9
           command:
             - "/usr/local/bin/runner.sh"
             - "/bin/sh"
@@ -71,7 +71,7 @@ presubmits:
       timeout: 5h
       grace_period: 5m
     max_concurrency: 6
-    cluster: kubevirt-prow-workloads
+    cluster: prow-workloads
     labels:
       preset-podman-in-container-enabled: "true"
       preset-docker-mirror-proxy: "true"
@@ -80,19 +80,14 @@ presubmits:
       nodeSelector:
         type: bare-metal-external
       containers:
-        - image: quay.io/kubevirtci/bootstrap:v20240829-fb5890c
+        - image: quay.io/kubevirtci/bootstrap:v20251218-e7a7fc9
           command:
             - "/usr/local/bin/runner.sh"
             - "/bin/sh"
             - "-c"
             - "automation/test.sh"
-          # scheduling gates feature gate is enabled by default in versions >= 1.27
-          # this should be deleted once the default provider will be higher than 1.26
-          env:
-            - name: TARGET
-              value: k8s-1.27
           securityContext:
             privileged: true
           resources:
             requests:
-              memory: "29Gi"
+              memory: "52Gi"

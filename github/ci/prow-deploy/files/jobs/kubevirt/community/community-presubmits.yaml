@@ -1,34 +1,104 @@
 presubmits:
   kubevirt/community:
-  - name: pull-community-generate-kubevirt-devstats-repo-sql
+  - always_run: true
     cluster: kubevirt-prow-control-plane
-    always_run: false
-    run_if_changed: "sigs.yaml"
     decorate: true
+    extra_refs:
+    - org: kubevirt
+      repo: project-infra
+      base_ref: main
+    name: pull-community-make-generate
     spec:
       containers:
-        - image: quay.io/kubevirtci/kubevirt-infra-bootstrap:v20230508-844cfc0
-          command: [ "/usr/local/bin/runner.sh", "/bin/bash", "-c" ]
-          args:
-            - pip install ruamel.yaml && ./hack/generate-devstats-repo-sql.py
-          resources:
-            requests:
-              memory: "1Gi"
-            limits:
-              memory: "1Gi"
-  - name: pull-community-validate-sigs-yaml
-    run_if_changed: "sigs.yaml"
-    optional: false
+      - args:
+        - |
+          make generate
+          git diff --exit-code || (
+            echo "ERROR: Unapplied changes detected - please run make generate and commit changes!" && exit 1
+          )
+        command:
+        - "/usr/local/bin/runner.sh"
+        - "/bin/sh"
+        - "-ce"
+        image: quay.io/kubevirtci/golang:v20251218-e7a7fc9
+        resources:
+          requests:
+            memory: "1Gi"
+          limits:
+            memory: "1Gi"
+  - always_run: false
+    cluster: kubevirt-prow-control-plane
     decorate: true
+    extra_refs:
+    - org: kubevirt
+      repo: project-infra
+      base_ref: main
+    name: pull-community-make-lint
+    run_if_changed: "generators/.*|validators/.*|pkg/.*"
     spec:
       containers:
-        - image: golang:1.16
-          env:
-            - name: GO111MODULE
-              value: "on"
-            - name: XDG_CACHE_HOME
-              value: "/tmp/.cache"
-          command:
-            - "/bin/bash"
-            - "-c"
-            - "go run validators/cmd/sigs/sigs-validator.go --sigs_file_path=./sigs.yaml"
+      - args:
+        - |
+          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b ${GOPATH}/bin ${GOLANGCI_LINT_VERSION}
+          make lint
+        command:
+        - "/usr/local/bin/runner.sh"
+        - "/bin/sh"
+        - "-ce"
+        env:
+        - name: GOLANGCI_LINT_VERSION
+          value: "v2.4.0"
+        image: quay.io/kubevirtci/golang:v20251218-e7a7fc9
+        resources:
+          requests:
+            memory: "1Gi"
+          limits:
+            memory: "1Gi"
+  - always_run: false
+    cluster: kubevirt-prow-control-plane
+    decorate: true
+    extra_refs:
+    - org: kubevirt
+      repo: project-infra
+      base_ref: main
+    name: pull-community-make-test
+    run_if_changed: "generators/.*|validators/.*|pkg/.*"
+    spec:
+      containers:
+      - args:
+        - make test
+        command:
+        - "/usr/local/bin/runner.sh"
+        - "/bin/sh"
+        - "-ce"
+        image: quay.io/kubevirtci/golang:v20251218-e7a7fc9
+        resources:
+          requests:
+            memory: "1Gi"
+          limits:
+            memory: "1Gi"
+  - always_run: false
+    cluster: kubevirt-prow-control-plane
+    decorate: true
+    extra_refs:
+    - org: kubevirt
+      repo: project-infra
+      base_ref: main
+    name: pull-community-make-coverage
+    run_if_changed: "generators/.*|validators/.*|pkg/.*"
+    spec:
+      containers:
+      - args:
+        - |
+          go install github.com/cancue/covreport@latest
+          make coverage
+        command:
+        - "/usr/local/bin/runner.sh"
+        - "/bin/sh"
+        - "-ce"
+        image: quay.io/kubevirtci/golang:v20251218-e7a7fc9
+        resources:
+          requests:
+            memory: "1Gi"
+          limits:
+            memory: "1Gi"

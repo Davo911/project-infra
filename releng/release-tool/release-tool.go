@@ -4,15 +4,18 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"regexp"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
+
+	"sigs.k8s.io/prow/pkg/config"
+	"sigs.k8s.io/yaml"
 
 	"golang.org/x/oauth2"
 
@@ -309,7 +312,9 @@ func (r *releaseData) makeTag(branch string) error {
 	r.generateReleaseNotes()
 
 	_, err := gitCommand("-C", r.repoDir, "tag", "-s", r.tag, "-F", r.releaseNotesFile)
-
+	if err != nil {
+		return err
+	}
 	if !r.dryRun {
 		_, err = gitCommand("-C", r.repoDir, "push", r.repoUrl, r.tag)
 		if err != nil {
@@ -415,10 +420,22 @@ func (r *releaseData) forkProwJobs() error {
 	// create new prow configs if they don't already exist
 	if _, err := os.Stat(fullOutputConfig); err != nil && os.IsNotExist(err) {
 		log.Printf("Creating new prow yaml at path %s", fullOutputConfig)
-		cmd := exec.Command("/usr/bin/config-forker", "--job-config", fullJobConfig, "--version", version, "--output", fullOutputConfig)
+		temp, err := os.MkdirTemp("", "presubmits")
+		if err != nil {
+			log.Printf("ERROR: temp dir creation failed: %s", err)
+			return err
+		}
+		tempPresubmitsConfigPath := filepath.Join(temp, "presubmits.yaml")
+		cmd := exec.Command("/usr/bin/config-forker", "--job-config", fullJobConfig, "--go-version", "1.24", "--version", version, "--output", tempPresubmitsConfigPath)
 		bytes, err := cmd.CombinedOutput()
 		if err != nil {
 			log.Printf("ERROR: config-forker command output: %s : %s ", string(bytes), err)
+			return err
+		}
+
+		err = configureReleaseJob(tempPresubmitsConfigPath, fullOutputConfig)
+		if err != nil {
+			log.Printf("ERROR: configuring release job failed: %s", err)
 			return err
 		}
 
@@ -464,6 +481,46 @@ func (r *releaseData) forkProwJobs() error {
 		}
 	}
 
+	return nil
+}
+
+// configureReleaseJob changes the values from the configuration required for jobs running against
+// main branch to what is required in the config for presubmits on release branches. It
+//   - changes { run_before_merge: true; always_run: false }
+//     to { always_run: true }
+//   - deletes { labels.preset_bazel_cache: true }
+func configureReleaseJob(configPath string, outputPath string) error {
+	if outputPath == configPath {
+		return fmt.Errorf("output-path and config-path must not be the same")
+	}
+	jobConfig, err := config.ReadJobConfig(configPath)
+	if err != nil {
+		return err
+	}
+	for key, presubmits := range jobConfig.PresubmitsStatic {
+		var newPresubmits []config.Presubmit
+		for _, presubmit := range presubmits {
+			if presubmit.RunBeforeMerge {
+				presubmit.AlwaysRun = true
+				presubmit.RunBeforeMerge = false
+			}
+			delete(presubmit.Labels, "preset-bazel-cache")
+			newPresubmits = append(newPresubmits, presubmit)
+		}
+		jobConfig.PresubmitsStatic[key] = newPresubmits
+	}
+	marshalled, err := yaml.Marshal(&jobConfig)
+	if err != nil {
+		return err
+	}
+	_, err = os.Stat(outputPath)
+	if err == nil || !os.IsNotExist(err) {
+		return fmt.Errorf("unexpected error on output file %s: %v", outputPath, err)
+	}
+	err = os.WriteFile(outputPath, marshalled, os.ModePerm)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -700,6 +757,9 @@ func (r *releaseData) getBlockers(branch string) (*blockerListCacheEntry, error)
 	}
 
 	prs, _, err := r.githubClient.PullRequests.List(context.Background(), r.org, r.repo, prListOptions)
+	if err != nil {
+		return nil, err
+	}
 
 	filteredPRs := []*github.PullRequest{}
 	filteredIssues := []*github.Issue{}
@@ -772,7 +832,7 @@ func (r *releaseData) getReleases() ([]*github.RepositoryRelease, error) {
 	return r.allReleases, nil
 }
 
-func (r *releaseData) autoDetectData(autoReleaseCadance string, autoPromoteAfterDays int) error {
+func (r *releaseData) autoDetectData(autoReleaseCadance string, autoPromoteAfterDays int) error { //nolint:gocyclo
 
 	log.Printf("Attempting to auto detect release for %s/%s", r.org, r.repo)
 
@@ -975,7 +1035,7 @@ func (r *releaseData) autoDetectData(autoReleaseCadance string, autoPromoteAfter
 	return nil
 }
 
-func (r *releaseData) verifyTag() error {
+func (r *releaseData) verifyTag() error { //nolint:gocyclo
 	// must be a valid semver version
 	tagSemver, err := semver.NewVersion(r.tag)
 	if err != nil {
@@ -1162,7 +1222,7 @@ func main() {
 		log.Fatal("--github-token-file is a required argument")
 	}
 
-	tokenBytes, err := ioutil.ReadFile(*githubTokenFile)
+	tokenBytes, err := os.ReadFile(*githubTokenFile)
 	if err != nil {
 		log.Fatalf("ERROR accessing github token: %s ", err)
 	}

@@ -1,55 +1,67 @@
 presubmits:
   kubevirt/project-infra:
   - name: check-prow-config
+    # Check Prow configuration using the `checkconfig` tool:
+    # - https://docs.prow.k8s.io/docs/components/cli-tools/checkconfig/
     always_run: true
     decorate: true
     cluster: kubevirt-prow-control-plane
+    clone_depth: 1
+    labels:
+      preset-gcs-credentials: "true"
     spec:
       containers:
-      - image: us-docker.pkg.dev/k8s-infra-prow/images/checkconfig:v20240827-195f38540
+      - image: us-docker.pkg.dev/k8s-infra-prow/images/checkconfig:v20260205-2d6316e3a
+        command:
+        - /ko-app/checkconfig
         args:
-        - "/ko-app/checkconfig"
-        - "--config-path"
-        - "github/ci/prow-deploy/files/config.yaml"
-        - "--job-config-path"
-        - "github/ci/prow-deploy/files/jobs"
-        - "--plugin-config"
-        - "github/ci/prow-deploy/files/plugins.yaml"
-        - "--strict"
+        - --config-path=github/ci/prow-deploy/files/config.yaml
+        - --job-config-path=github/ci/prow-deploy/files/jobs
+        - --plugin-config=github/ci/prow-deploy/files/plugins.yaml
+        - --strict
+        - --include-default-warnings
+        - --warnings=unknown-fields-all
         resources:
           requests:
             memory: "500Mi"
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: [ALL]
+          seccompProfile:
+            type: RuntimeDefault
   - name: pull-project-infra-test-robots
-    run_if_changed: "robots/.*|WORKSPACE|go_third_party.bzl|go.mod"
+    run_if_changed: "robots/.*|pkg/.*|go.mod|go.sum"
     optional: false
     decorate: true
     cluster: kubevirt-prow-control-plane
     spec:
       containers:
-      - image: quay.io/kubevirtci/golang:v20240829-fb5890c
+      - image: quay.io/kubevirtci/golang:v20251218-e7a7fc9
         command:
         - "/usr/local/bin/runner.sh"
         - "/bin/sh"
         - "-ce"
         - |
-          GOBIN=/usr/local/bin/ go install github.com/onsi/ginkgo/v2/ginkgo@v2.9.2
           go test ./robots/...
         env:
         - name: GIMME_GO_VERSION
-          value: "1.21.6"
+          value: "1.25.1"
+        - name: GOFLAGS
+          value: "-mod=vendor"
         resources:
           requests:
             memory: "4Gi"
           limits:
             memory: "4Gi"
   - name: pull-project-infra-test-releng
-    run_if_changed: "releng/.*|WORKSPACE|go_third_party.bzl|go.mod"
+    run_if_changed: "releng/.*|go.mod"
     optional: false
     decorate: true
     cluster: kubevirt-prow-control-plane
     spec:
       containers:
-      - image: quay.io/kubevirtci/golang:v20240829-fb5890c
+      - image: quay.io/kubevirtci/golang:v20251218-e7a7fc9
         command:
         - "/usr/local/bin/runner.sh"
         - "/bin/sh"
@@ -58,20 +70,20 @@ presubmits:
           go test ./releng/...
         env:
         - name: GIMME_GO_VERSION
-          value: "1.21.6"
+          value: "1.25.1"
         resources:
           requests:
             memory: "4Gi"
           limits:
             memory: "4Gi"
   - name: pull-project-infra-test-external-plugins
-    run_if_changed: "external-plugins/.*|WORKSPACE|go_third_party.bzl|go.mod"
+    run_if_changed: "external-plugins/.*|go.mod"
     cluster: kubevirt-prow-control-plane
     optional: false
     decorate: true
     spec:
       containers:
-      - image: quay.io/kubevirtci/golang:v20240829-fb5890c
+      - image: quay.io/kubevirtci/golang:v20251218-e7a7fc9
         command:
         - "/usr/local/bin/runner.sh"
         - "/bin/sh"
@@ -80,14 +92,14 @@ presubmits:
           go test ./external-plugins/...
         env:
         - name: GIMME_GO_VERSION
-          value: "1.21.6"
+          value: "1.25.1"
         resources:
           requests:
             memory: "4Gi"
           limits:
             memory: "4Gi"
   - name: pull-project-infra-test-github-ci-services
-    run_if_changed: "github/ci/services/.*|WORKSPACE|go_third_party.bzl|go.mod"
+    run_if_changed: "github/ci/services/.*|go.mod"
     optional: false
     decorate: true
     cluster: kubevirt-prow-control-plane
@@ -95,42 +107,13 @@ presubmits:
       preset-bazel-cache: "true"
     spec:
       containers:
-      - image: quay.io/kubevirtci/bootstrap:v20240829-fb5890c
-        command:
-        - "/usr/local/bin/runner.sh"
-        - "/bin/sh"
-        - "-c"
-        - |
-          make gazelle-update-repos
-          bazel build //github/ci/services/...
-        resources:
-          requests:
-            memory: "4Gi"
-          limits:
-            memory: "4Gi"
-        securityContext:
-          runAsUser: 0
-  - name: pull-project-infra-test-bazel-config
-    run_if_changed: "github/ci/services/.*|external-plugins/.*|releng/.*|robots/.*|go.mod"
-    decorate: true
-    cluster: kubevirt-prow-control-plane
-    labels:
-      preset-bazel-cache: "true"
-    spec:
-      containers:
-      - image: quay.io/kubevirtci/bootstrap:v20240829-fb5890c
+      - image: quay.io/kubevirtci/golang:v20251218-e7a7fc9
         command:
         - "/usr/local/bin/runner.sh"
         - "/bin/sh"
         - "-ce"
         - |
-          make gazelle gazelle-update-repos
-          if [ $(git status --short | wc -l) -gt 0 ]; then
-            echo "Bazel configs need an update"
-            echo "Uncommitted changes:"
-            git diff
-            exit 1
-          fi
+          go build ./github/ci/services/...
         resources:
           requests:
             memory: "4Gi"
@@ -138,6 +121,53 @@ presubmits:
             memory: "4Gi"
         securityContext:
           runAsUser: 0
+  - always_run: true
+    cluster: kubevirt-prow-control-plane
+    decorate: true
+    name: pull-project-infra-lint
+    spec:
+      containers:
+      - command:
+        - "/usr/local/bin/runner.sh"
+        - "/bin/sh"
+        - "-ce"
+        - |
+          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b ${GOPATH}/bin ${GOLANGCI_LINT_VERSION}
+          make lint
+        env:
+        - name: GIMME_GO_VERSION
+          value: "1.25.1"
+        - name: GOLANGCI_LINT_VERSION
+          value: "v2.4.0"
+        image: quay.io/kubevirtci/golang:v20251218-e7a7fc9
+        resources:
+          requests:
+            memory: "4Gi"
+          limits:
+            memory: "4Gi"
+  - always_run: false
+    cluster: kubevirt-prow-control-plane
+    decorate: true
+    name: pull-project-infra-coverage
+    run_if_changed: "external-plugins/.*|releng/.*|robots/.*|pkg/.*"
+    spec:
+      containers:
+      - args:
+        - |
+          make coverage
+        command:
+        - "/usr/local/bin/runner.sh"
+        - "/bin/sh"
+        - "-ce"
+        env:
+        - name: GIMME_GO_VERSION
+          value: "1.25.1"
+        image: quay.io/kubevirtci/golang:v20251218-e7a7fc9
+        resources:
+          requests:
+            memory: "4Gi"
+          limits:
+            memory: "4Gi"
   - name: build-kubevirt-infra-bootstrap-image
     always_run: false
     run_if_changed: "images/kubevirt-infra-bootstrap/.*"
@@ -149,7 +179,7 @@ presubmits:
     cluster: kubevirt-prow-control-plane
     spec:
       containers:
-        - image: quay.io/kubevirtci/bootstrap:v20240829-fb5890c
+        - image: quay.io/kubevirtci/bootstrap:v20251218-e7a7fc9
           command:
             - "/usr/local/bin/runner.sh"
             - "/bin/bash"
@@ -173,7 +203,7 @@ presubmits:
     cluster: kubevirt-prow-control-plane
     spec:
       containers:
-        - image: quay.io/kubevirtci/bootstrap:v20240829-fb5890c
+        - image: quay.io/kubevirtci/bootstrap:v20251218-e7a7fc9
           command:
             - "/usr/local/bin/runner.sh"
             - "/bin/bash"
@@ -182,32 +212,6 @@ presubmits:
               cd images
               ./publish_multiarch_image.sh -a -b bootstrap quay.io kubevirtci
               ./publish_multiarch_image.sh -a -b -l golang quay.io kubevirtci
-          securityContext:
-            privileged: true
-          resources:
-            requests:
-              memory: "4Gi"
-            limits:
-              memory: "4Gi"
-  - name: build-bootstrap-legacy-images
-    always_run: false
-    run_if_changed: "images/bootstrap-legacy/.*|images/golang-legacy/.*"
-    decorate: true
-    labels:
-      preset-podman-in-container-enabled: "true"
-      preset-docker-mirror-proxy: "true"
-    cluster: kubevirt-prow-control-plane
-    spec:
-      containers:
-        - image: quay.io/kubevirtci/bootstrap:v20240829-fb5890c
-          command:
-            - "/usr/local/bin/runner.sh"
-            - "/bin/bash"
-            - "-ce"
-            - |
-              cd images
-              ./publish_multiarch_image.sh -a -b bootstrap-legacy quay.io kubevirtci
-              ./publish_multiarch_image.sh -a -b -l golang-legacy quay.io kubevirtci
           securityContext:
             privileged: true
           resources:
@@ -225,7 +229,7 @@ presubmits:
     cluster: kubevirt-prow-control-plane
     spec:
       containers:
-        - image: quay.io/kubevirtci/bootstrap:v20240829-fb5890c
+        - image: quay.io/kubevirtci/bootstrap:v20251218-e7a7fc9
           command:
             - "/usr/local/bin/runner.sh"
             - "/bin/bash"
@@ -248,10 +252,11 @@ presubmits:
       preset-podman-in-container-enabled: "true"
       preset-docker-mirror-proxy: "true"
       preset-kubevirtci-quay-credential: "true"
+      preset-project-infra-image-build-linux: "true"
     cluster: kubevirt-prow-control-plane
     spec:
       containers:
-        - image: quay.io/kubevirtci/golang:v20240829-fb5890c
+        - image: quay.io/kubevirtci/golang:v20251218-e7a7fc9
           command:
             - "/usr/local/bin/runner.sh"
             - "/bin/bash"
@@ -277,7 +282,7 @@ presubmits:
     cluster: kubevirt-prow-control-plane
     spec:
       containers:
-        - image: quay.io/kubevirtci/bootstrap:v20240829-fb5890c
+        - image: quay.io/kubevirtci/bootstrap:v20251218-e7a7fc9
           command:
             - "/usr/local/bin/runner.sh"
             - "/bin/bash"
@@ -297,7 +302,7 @@ presubmits:
     run_if_changed: "images/kubevirt-kubevirt.github.io/.*"
     decorate: true
     labels:
-      preset-dind-enabled: "true"
+      preset-podman-in-container-enabled: "true"
       preset-docker-mirror-proxy: "true"
       preset-kubevirtci-quay-credential: "true"
     cluster: kubevirt-prow-control-plane
@@ -307,7 +312,7 @@ presubmits:
       base_ref: main
     spec:
       containers:
-        - image: quay.io/kubevirtci/bootstrap:v20240829-fb5890c
+        - image: quay.io/kubevirtci/bootstrap:v20251218-e7a7fc9
           command:
             - "/usr/local/bin/runner.sh"
             - "/bin/bash"
@@ -334,7 +339,7 @@ presubmits:
     cluster: kubevirt-prow-control-plane
     spec:
       containers:
-        - image: quay.io/kubevirtci/bootstrap:v20240829-fb5890c
+        - image: quay.io/kubevirtci/bootstrap:v20251218-e7a7fc9
           command:
             - "/usr/local/bin/runner.sh"
             - "/bin/bash"
@@ -360,7 +365,7 @@ presubmits:
     cluster: kubevirt-prow-control-plane
     spec:
       containers:
-        - image: quay.io/kubevirtci/bootstrap:v20240829-fb5890c
+        - image: quay.io/kubevirtci/bootstrap:v20251218-e7a7fc9
           command:
             - "/usr/local/bin/runner.sh"
             - "/bin/bash"
@@ -383,10 +388,10 @@ presubmits:
       preset-podman-in-container-enabled: "true"
       preset-docker-mirror-proxy: "true"
       preset-kubevirtci-quay-credential: "true"
-    cluster: kubevirt-prow-workloads
+    cluster: prow-workloads
     spec:
       containers:
-        - image: quay.io/kubevirtci/bootstrap:v20240829-fb5890c
+        - image: quay.io/kubevirtci/bootstrap:v20251218-e7a7fc9
           command:
             - "/usr/local/bin/runner.sh"
             - "/bin/bash"
@@ -403,32 +408,30 @@ presubmits:
               memory: "4Gi"
   - name: build-pr-creator-image
     always_run: false
-    run_if_changed: "images/pr-creator/.*"
+    run_if_changed: 'images/pr-creator/.*|hack/(git-pr\.sh|git-askpass\.sh)|robots/labels-checker/.*|pkg/.*|go.mod|go.sum'
     decorate: true
     labels:
       preset-podman-in-container-enabled: "true"
       preset-docker-mirror-proxy: "true"
       preset-kubevirtci-quay-credential: "true"
-    cluster: kubevirt-prow-workloads
+    cluster: prow-workloads
     spec:
       containers:
-        - image: quay.io/kubevirtci/bootstrap:v20240829-fb5890c
+        - image: quay.io/kubevirtci/bootstrap:v20251218-e7a7fc9
           command:
             - "/usr/local/bin/runner.sh"
             - "/bin/bash"
             - "-c"
             - |
               cd images
-              ./publish_image.sh -b pr-creator quay.io kubevirtci
+              ./publish_multiarch_image.sh -b pr-creator quay.io kubevirtci
           securityContext:
             privileged: true
           resources:
             requests:
-              memory: "16Gi"
-              cpu: "500m"
+              memory: "52Gi"
             limits:
-              memory: "16Gi"
-              cpu: "500m"
+              memory: "52Gi"
   - name: build-vm-image-builder-image
     always_run: false
     run_if_changed: "images/bootstrap/.*"
@@ -440,7 +443,7 @@ presubmits:
     cluster: kubevirt-prow-control-plane
     spec:
       containers:
-        - image: quay.io/kubevirtci/bootstrap:v20240829-fb5890c
+        - image: quay.io/kubevirtci/bootstrap:v20251218-e7a7fc9
           command:
             - "/usr/local/bin/runner.sh"
             - "/bin/bash"
@@ -464,7 +467,7 @@ presubmits:
     cluster: kubevirt-prow-control-plane
     spec:
       containers:
-        - image: quay.io/kubevirtci/bootstrap:v20240829-fb5890c
+        - image: quay.io/kubevirtci/bootstrap:v20251218-e7a7fc9
           command:
             - "/usr/local/bin/runner.sh"
             - "/bin/bash"
@@ -478,23 +481,280 @@ presubmits:
               memory: "4Gi"
             limits:
               memory: "4Gi"
-  - name: build-test-label-analyzer-image
+  - name: build-test-report-image
     always_run: false
-    run_if_changed: "images/test-label-analyzer/.*|robots/.*/test-label-analyzer/.*"
+    run_if_changed: "^(robots|images)/test-report/.*|pkg/.*|go.mod|go.sum"
     decorate: true
     labels:
       preset-podman-in-container-enabled: "true"
       preset-docker-mirror-proxy: "true"
       preset-kubevirtci-quay-credential: "true"
+      preset-project-infra-image-build-linux: "true"
     cluster: kubevirt-prow-control-plane
     spec:
       containers:
-        - image: quay.io/kubevirtci/bootstrap:v20240829-fb5890c
+        - image: quay.io/kubevirtci/bootstrap:v20251218-e7a7fc9
           command:
             - "/usr/local/bin/runner.sh"
             - "/bin/bash"
             - "-ce"
-            - "cd images && ./publish_image.sh -b test-label-analyzer quay.io kubevirtci"
+            - "cd images && ./publish_image.sh -b -e test-report quay.io kubevirtci"
+          securityContext:
+            privileged: true
+          resources:
+            requests:
+              memory: "1Gi"
+            limits:
+              memory: "1Gi"
+  - name: build-release-blocker-image
+    always_run: false
+    run_if_changed: "^(robots|images)/release-blocker/.*|pkg/.*|go.mod|go.sum"
+    decorate: true
+    labels:
+      preset-podman-in-container-enabled: "true"
+      preset-docker-mirror-proxy: "true"
+      preset-kubevirtci-quay-credential: "true"
+      preset-project-infra-image-build-linux: "true"
+    cluster: kubevirt-prow-control-plane
+    spec:
+      containers:
+        - image: quay.io/kubevirtci/bootstrap:v20251218-e7a7fc9
+          command:
+            - "/usr/local/bin/runner.sh"
+            - "/bin/bash"
+            - "-ce"
+            - "cd images && ./publish_image.sh -b -e release-blocker quay.io kubevirtci"
+          securityContext:
+            privileged: true
+          resources:
+            requests:
+              memory: "1Gi"
+            limits:
+              memory: "1Gi"
+  - name: build-referee-image
+    always_run: false
+    run_if_changed: "^(external-plugins|images)/referee/.*|pkg/.*|go.mod|go.sum"
+    decorate: true
+    labels:
+      preset-podman-in-container-enabled: "true"
+      preset-docker-mirror-proxy: "true"
+      preset-kubevirtci-quay-credential: "true"
+      preset-project-infra-image-build-linux: "true"
+    cluster: kubevirt-prow-control-plane
+    spec:
+      containers:
+        - image: quay.io/kubevirtci/bootstrap:v20251218-e7a7fc9
+          command:
+            - "/usr/local/bin/runner.sh"
+            - "/bin/bash"
+            - "-ce"
+            - "cd images && ./publish_image.sh -b -e referee quay.io kubevirtci"
+          securityContext:
+            privileged: true
+          resources:
+            requests:
+              memory: "1Gi"
+            limits:
+              memory: "1Gi"
+  - name: build-ginkgo-tests-image
+    always_run: false
+    run_if_changed: "^(robots|images)/ginkgo-tests/.*|pkg/.*|go.mod|go.sum"
+    annotations:
+      testgrid-create-test-group: "false"
+    decorate: true
+    cluster: kubevirt-prow-control-plane
+    max_concurrency: 1
+    labels:
+      preset-bazel-cache: "true"
+      preset-kubevirtci-quay-credential: "true"
+      preset-podman-in-container-enabled: "true"
+      preset-project-infra-image-build-linux: "true"
+    spec:
+      containers:
+        - image: quay.io/kubevirtci/bootstrap:v20251218-e7a7fc9
+          command:
+            - "/usr/local/bin/runner.sh"
+            - "/bin/bash"
+            - "-c"
+            - |
+              cat "$QUAY_PASSWORD" | podman login --username $(cat "$QUAY_USER") --password-stdin=true quay.io
+              cd images
+              ./publish_image.sh -b -e ginkgo-tests quay.io kubevirtci
+          resources:
+            requests:
+              memory: "1Gi"
+            limits:
+              memory: "1Gi"
+          securityContext:
+            privileged: true
+  - name: build-indexpagecreator-image
+    always_run: false
+    run_if_changed: "^(robots|images)/indexpagecreator/.*|pkg/.*|go.mod|go.sum"
+    decorate: true
+    labels:
+      preset-podman-in-container-enabled: "true"
+      preset-docker-mirror-proxy: "true"
+      preset-kubevirtci-quay-credential: "true"
+      preset-project-infra-image-build-linux: "true"
+    cluster: kubevirt-prow-control-plane
+    spec:
+      containers:
+        - image: quay.io/kubevirtci/bootstrap:v20251218-e7a7fc9
+          command:
+            - "/usr/local/bin/runner.sh"
+            - "/bin/bash"
+            - "-ce"
+            - "cd images && ./publish_image.sh -b -e indexpagecreator quay.io kubevirtci"
+          securityContext:
+            privileged: true
+          resources:
+            requests:
+              memory: "1Gi"
+            limits:
+              memory: "1Gi"
+  - name: build-flakefinder-image
+    always_run: false
+    run_if_changed: "^(robots|images)/flakefinder/.*|pkg/.*|go.mod|go.sum"
+    decorate: true
+    labels:
+      preset-podman-in-container-enabled: "true"
+      preset-docker-mirror-proxy: "true"
+      preset-kubevirtci-quay-credential: "true"
+      preset-project-infra-image-build-linux: "true"
+    cluster: kubevirt-prow-control-plane
+    spec:
+      containers:
+        - image: quay.io/kubevirtci/bootstrap:v20251218-e7a7fc9
+          command:
+            - "/usr/local/bin/runner.sh"
+            - "/bin/bash"
+            - "-ce"
+            - "cd images && ./publish_image.sh -b -e flakefinder quay.io kubevirtci"
+          securityContext:
+            privileged: true
+          resources:
+            requests:
+              memory: "1Gi"
+            limits:
+              memory: "1Gi"
+  - name: build-flake-report-creator-image
+    always_run: false
+    run_if_changed: "^(robots|images)/flake-report-creator/.*|pkg/.*|go.mod|go.sum"
+    decorate: true
+    labels:
+      preset-podman-in-container-enabled: "true"
+      preset-docker-mirror-proxy: "true"
+      preset-kubevirtci-quay-credential: "true"
+      preset-project-infra-image-build-linux: "true"
+    cluster: kubevirt-prow-control-plane
+    spec:
+      containers:
+        - image: quay.io/kubevirtci/bootstrap:v20251218-e7a7fc9
+          command:
+            - "/usr/local/bin/runner.sh"
+            - "/bin/bash"
+            - "-ce"
+            - "cd images && ./publish_image.sh -b -e flake-report-creator quay.io kubevirtci"
+          securityContext:
+            privileged: true
+          resources:
+            requests:
+              memory: "1Gi"
+            limits:
+              memory: "1Gi"
+  - name: build-rehearse-image
+    always_run: false
+    run_if_changed: "^(external-plugins|images)/rehearse/.*|pkg/.*|go.mod|go.sum"
+    decorate: true
+    labels:
+      preset-podman-in-container-enabled: "true"
+      preset-docker-mirror-proxy: "true"
+      preset-kubevirtci-quay-credential: "true"
+      preset-project-infra-image-build-linux: "true"
+    cluster: kubevirt-prow-control-plane
+    spec:
+      containers:
+        - image: quay.io/kubevirtci/bootstrap:v20251218-e7a7fc9
+          command:
+            - "/usr/local/bin/runner.sh"
+            - "/bin/bash"
+            - "-ce"
+            - "cd images && ./publish_image.sh -b -e rehearse quay.io kubevirtci"
+          securityContext:
+            privileged: true
+          resources:
+            requests:
+              memory: "1Gi"
+            limits:
+              memory: "1Gi"
+  - name: build-phased-image
+    always_run: false
+    run_if_changed: "images/phased/.*|external-plugins/phased/.*|pkg/.*|go.mod|go.sum"
+    decorate: true
+    labels:
+      preset-podman-in-container-enabled: "true"
+      preset-docker-mirror-proxy: "true"
+      preset-kubevirtci-quay-credential: "true"
+      preset-project-infra-image-build-linux: "true"
+    cluster: kubevirt-prow-control-plane
+    spec:
+      containers:
+        - image: quay.io/kubevirtci/bootstrap:v20251218-e7a7fc9
+          command:
+            - "/usr/local/bin/runner.sh"
+            - "/bin/bash"
+            - "-ce"
+            - "cd images && ./publish_image.sh -b -e phased quay.io kubevirtci"
+          securityContext:
+            privileged: true
+          resources:
+            requests:
+              memory: "1Gi"
+            limits:
+              memory: "1Gi"
+  - name: build-test-label-analyzer-image
+    always_run: false
+    run_if_changed: "images/test-label-analyzer/.*|robots/test-label-analyzer/.*|pkg/.*|go.mod|go.sum"
+    decorate: true
+    labels:
+      preset-podman-in-container-enabled: "true"
+      preset-docker-mirror-proxy: "true"
+      preset-kubevirtci-quay-credential: "true"
+      preset-project-infra-image-build-linux: "true"
+    cluster: kubevirt-prow-control-plane
+    spec:
+      containers:
+        - image: quay.io/kubevirtci/bootstrap:v20251218-e7a7fc9
+          command:
+            - "/usr/local/bin/runner.sh"
+            - "/bin/bash"
+            - "-ce"
+            - "cd images && ./publish_image.sh -b -e test-label-analyzer quay.io kubevirtci"
+          securityContext:
+            privileged: true
+          resources:
+            requests:
+              memory: "1Gi"
+            limits:
+              memory: "1Gi"
+  - name: build-test-subset-image
+    always_run: false
+    run_if_changed: "images/test-subset/.*|external-plugins/test-subset/.*|pkg/.*|go.mod|go.sum"
+    decorate: true
+    labels:
+      preset-podman-in-container-enabled: "true"
+      preset-docker-mirror-proxy: "true"
+      preset-kubevirtci-quay-credential: "true"
+      preset-project-infra-image-build-linux: "true"
+    cluster: kubevirt-prow-control-plane
+    spec:
+      containers:
+        - image: quay.io/kubevirtci/bootstrap:v20251218-e7a7fc9
+          command:
+            - "/usr/local/bin/runner.sh"
+            - "/bin/bash"
+            - "-ce"
+            - "cd images && ./publish_image.sh -b -e test-subset quay.io kubevirtci"
           securityContext:
             privileged: true
           resources:
@@ -512,7 +772,7 @@ presubmits:
       preset-gcs-credentials: "true"
       preset-pgp-bot-key: "true"
       preset-podman-shared-images: "true"
-    cluster: kubevirt-prow-workloads
+    cluster: prow-workloads
     extra_refs:
     - org: kubevirt
       repo: kubevirt
@@ -521,7 +781,7 @@ presubmits:
       securityContext:
         runAsUser: 0
       containers:
-        - image: quay.io/kubevirtci/prow-deploy:v20231116-40070ee
+        - image: quay.io/kubevirtci/prow-deploy:v20260128-84f963a
           env:
           - name: GITHUB_TOKEN
             value: "/etc/github/oauth"
@@ -536,7 +796,7 @@ presubmits:
             privileged: true
           resources:
             requests:
-              memory: "29Gi"
+              memory: "52Gi"
           volumeMounts:
           - name: molecule-docker
             mountPath: /tmp/prow-deploy-molecule
@@ -550,33 +810,33 @@ presubmits:
           secretName: unprivileged-oauth-token
   - name: pull-project-infra-ci-search-deploy-test
     optional: false
-    run_if_changed: "github/ci/services/ci-search/.*|github/ci/services/common/.*|WORKSPACE|go_third_party.bzl"
+    run_if_changed: "github/ci/services/ci-search/.*|github/ci/services/common/.*"
     decorate: true
     labels:
       preset-podman-in-container-enabled: "true"
       preset-docker-mirror-proxy: "true"
-    cluster: kubevirt-prow-workloads
+    cluster: prow-workloads
     spec:
       containers:
-        - image: quay.io/kubevirtci/golang:v20240829-fb5890c
+        - image: quay.io/kubevirtci/golang:v20251218-e7a7fc9
           command:
             - "/usr/local/bin/runner.sh"
             - "/bin/sh"
             - "-ce"
             - |
               # install kind
-              curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.11.1/kind-linux-amd64
+              curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.23.0/kind-linux-amd64
               chmod +x ./kind && mv ./kind /usr/local/bin/kind
 
               # create test cluster
-              kind create cluster --image quay.io/kubevirtci/kind:v1.21.1
+              kind create cluster --image quay.io/kubevirtci/kindest-node:v1.30.0
 
               ./github/ci/services/ci-search/hack/deploy.sh testing
 
               go test ./github/ci/services/ci-search/e2e/...
           env:
           - name: GIMME_GO_VERSION
-            value: "1.21.6"
+            value: "1.25.1"
           resources:
             requests:
               memory: "16Gi"
@@ -587,35 +847,45 @@ presubmits:
             runAsUser: 0
   - name: pull-project-infra-grafana-deploy-test
     optional: false
-    run_if_changed: "github/ci/services/grafana/.*|github/ci/services/common/.*|WORKSPACE|go_third_party.bzl"
+    run_if_changed: "github/ci/services/grafana/.*|github/ci/services/common/.*"
     decorate: true
     labels:
       preset-podman-in-container-enabled: "true"
       preset-docker-mirror-proxy: "true"
       preset-podman-shared-images: "true"
-    cluster: kubevirt-prow-workloads
+    cluster: prow-workloads
     extra_refs:
     - org: kubevirt
       repo: kubevirt
       base_ref: main
     spec:
       containers:
-        - image: quay.io/kubevirtci/bootstrap:v20240829-fb5890c
-          command:
+        - command:
             - "/usr/local/bin/runner.sh"
             - "/bin/bash"
-            - "-c"
+            - "-ce"
             - |
-              dnf install -y helm 
+              # install kind
+              curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.23.0/kind-linux-amd64
+              chmod +x ./kind && mv ./kind /usr/local/bin/kind
+
+              # create test cluster
+              kind create cluster --image quay.io/kubevirtci/kindest-node:v1.30.0
+              kubectl cluster-info --context kind-kind
+              
               ./github/ci/services/grafana/hack/test.sh
+          env:
+          - name: GIMME_GO_VERSION
+            value: "1.25.1"
+          image: quay.io/kubevirtci/golang:v20251218-e7a7fc9
+          resources:
+            requests:
+              memory: "52Gi"
+            limits:
+              memory: "52Gi"
           securityContext:
             privileged: true
             runAsUser: 0
-          resources:
-            requests:
-              memory: "29Gi"
-            limits:
-              memory: "29Gi"
   - name: pull-project-infra-check-testgrid-config
     run_if_changed: '^github/ci/prow-deploy/files/jobs/.*$|^github/ci/testgrid/gen-config\.yaml$|^github/ci/testgrid/default\.yaml$'
     decorate: true
@@ -630,7 +900,7 @@ presubmits:
       base_ref: master
     spec:
       containers:
-      - image: quay.io/kubevirtci/golang:v20240829-fb5890c
+      - image: quay.io/kubevirtci/golang:v20251218-e7a7fc9
         command:
         - github/ci/testgrid/hack/check.sh
         securityContext:
@@ -640,9 +910,6 @@ presubmits:
             memory: "8Gi"
           limits:
             memory: "8Gi"
-        env:
-        - name: GIMME_GO_VERSION
-          value: "1.20"
   - name: pull-kubevirt-org-github-config-updater
     run_if_changed: '^github/ci/prow-deploy/kustom/base/configs/current/orgs/orgs\.yaml$'
     annotations:
@@ -651,14 +918,14 @@ presubmits:
       preset-github-credentials: "true"
     decorate: true
     decoration_config:
-      timeout: 2h
+      timeout: 3h
       grace_period: 5m
     max_concurrency: 1
     cluster: kubevirt-prow-control-plane
     spec:
       containers:
       - name: peribolos
-        image: us-docker.pkg.dev/k8s-infra-prow/images/peribolos:v20240827-195f38540
+        image: us-docker.pkg.dev/k8s-infra-prow/images/peribolos:v20260205-2d6316e3a
         command:
         - /ko-app/peribolos
         # when changing the peribolos settings below, please align the peribolos settings from the periodic job!
@@ -732,20 +999,20 @@ presubmits:
       timeout: 1h
       grace_period: 5m
     name: pull-project-infra-job-config-validator
-    run_if_changed: 'robots/cmd/job-config-validator/.*|go.mod|go.sum'
+    run_if_changed: 'robots/job-config-validator/.*|pkg/.*|go.mod|go.sum'
     spec:
       containers:
-      - image: quay.io/kubevirtci/golang:v20240829-fb5890c
+      - image: quay.io/kubevirtci/golang:v20251218-e7a7fc9
         env:
         - name: GIMME_GO_VERSION
-          value: "1.20"
+          value: "1.25.1"
         command:
         - "/usr/local/bin/runner.sh"
         - "/bin/sh"
         - "-ce"
         - |
-          ( cd robots/cmd/job-config-validator && go build ./... )
-          ./robots/cmd/job-config-validator/job-config-validator --help
+          ( cd robots/job-config-validator && go build ./... )
+          ./robots/job-config-validator/job-config-validator --help
         resources:
           requests:
             memory: "100Mi"

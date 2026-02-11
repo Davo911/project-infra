@@ -7,12 +7,12 @@ periodics:
   cluster: kubevirt-prow-control-plane
   spec:
     containers:
-    - image: quay.io/kubevirtci/flakefinder:v20230112-ec14f598
+    - image: quay.io/kubevirtci/flakefinder:v20260210-878d8f0
       env:
       - name: GOOGLE_APPLICATION_CREDENTIALS
         value: /etc/gcs/service-account.json
       command:
-      - "/app/robots/cmd/flakefinder/app.binary"
+      - /usr/bin/flakefinder
       args:
       - --dry-run=false
       - --token=/etc/github/oauth
@@ -21,6 +21,7 @@ periodics:
       - --org=nmstate
       - --repo=kubernetes-nmstate
       - --skip_results_before_start_of_report=false
+      - --pr_base_branch=main
       volumeMounts:
       - name: token
         mountPath: /etc/github
@@ -42,12 +43,12 @@ periodics:
   cluster: kubevirt-prow-control-plane
   spec:
     containers:
-    - image: quay.io/kubevirtci/flakefinder:v20230112-ec14f598
+    - image: quay.io/kubevirtci/flakefinder:v20260210-878d8f0
       env:
       - name: GOOGLE_APPLICATION_CREDENTIALS
         value: /etc/gcs/service-account.json
       command:
-      - "/app/robots/cmd/flakefinder/app.binary"
+      - /usr/bin/flakefinder
       args:
       - --dry-run=false
       - --token=/etc/github/oauth
@@ -56,6 +57,7 @@ periodics:
       - --org=nmstate
       - --repo=kubernetes-nmstate
       - --skip_results_before_start_of_report=false
+      - --pr_base_branch=main
       volumeMounts:
       - name: token
         mountPath: /etc/github
@@ -77,12 +79,12 @@ periodics:
   cluster: kubevirt-prow-control-plane
   spec:
     containers:
-    - image: quay.io/kubevirtci/flakefinder:v20230112-ec14f598
+    - image: quay.io/kubevirtci/flakefinder:v20260210-878d8f0
       env:
       - name: GOOGLE_APPLICATION_CREDENTIALS
         value: /etc/gcs/service-account.json
       command:
-      - "/app/robots/cmd/flakefinder/app.binary"
+      - /usr/bin/flakefinder
       args:
       - --dry-run=false
       - --token=/etc/github/oauth
@@ -91,6 +93,7 @@ periodics:
       - --org=nmstate
       - --repo=kubernetes-nmstate
       - --skip_results_before_start_of_report=false
+      - --pr_base_branch=main
       volumeMounts:
       - name: token
         mountPath: /etc/github
@@ -104,3 +107,42 @@ periodics:
     - name: gcs
       secret:
         secretName: gcs
+- name: periodic-knmstate-e2e-handler-k8s-latest
+  cron: "0 2 * * *"
+  annotations:
+    testgrid-create-test-group: "false"
+  decorate: true
+  decoration_config:
+    timeout: 3h
+    grace_period: 5m
+  max_concurrency: 6
+  labels:
+    preset-podman-in-container-enabled: "true"
+    preset-docker-mirror-proxy: "true"
+    preset-shared-images: "true"
+  cluster: prow-workloads
+  extra_refs:
+  - base_ref: main
+    org: nmstate
+    repo: kubernetes-nmstate
+    workdir: true
+  spec:
+    nodeSelector:
+      type: bare-metal-external
+    containers:
+      - image: quay.io/kubevirtci/golang:v20251218-e7a7fc9
+        securityContext:
+          privileged: true
+        resources:
+          requests:
+            memory: "52Gi"
+        env:
+          - name: NMSTATE_VERSION
+            value: "latest"
+          - name: NM_VERSION
+            value: "latest"
+        command:
+          - "/usr/local/bin/runner.sh"
+          - "/bin/sh"
+          - "-c"
+          - "automation/check-patch.e2e-k8s.sh"

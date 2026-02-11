@@ -5,35 +5,25 @@ periodics:
   annotations:
     testgrid-create-test-group: "false"
   cluster: kubevirt-prow-control-plane
+  extra_refs:
+  - org: kubevirt
+    repo: project-infra
+    base_ref: main
   spec:
     containers:
-    - image: gcr.io/k8s-staging-test-infra/commenter:v20240801-a5d9345e59
+    - image: quay.io/kubevirtci/golang:v20251218-e7a7fc9
       command:
-      - /ko-app/commenter
-      args:
-      - |-
-        --query=is:pr
-          is:open
-          -label:do-not-merge
-          -label:do-not-merge/blocked-paths
-          -label:do-not-merge/cherry-pick-not-approved
-          -label:do-not-merge/hold
-          -label:do-not-merge/invalid-owners-file
-          -label:do-not-merge/release-note-label-needed
-          -label:do-not-merge/work-in-progress
-          label:lgtm label:approved
-          status:failure
-          -label:needs-rebase
-          repo:kubevirt/kubevirt
-          repo:kubevirt/kubevirtci
-      - --token=/etc/github/oauth
-      - |-
-        --comment=/retest-required
-        This bot automatically retries required jobs that failed/flaked on approved PRs.
-        Silence the bot with an `/lgtm cancel` or `/hold` comment for consistent failures.
-      - --template
-      - --ceiling=1
-      - --confirm
+      - "/usr/local/bin/runner.sh"
+      - "/bin/sh"
+      - "-ce"
+      - >
+        go run ./robots/retester
+        --token=/etc/github/oauth
+        --ceiling=1
+        --confirm
+      env:
+      - name: GIMME_GO_VERSION
+        value: "1.25.1"
       volumeMounts:
       - name: token
         mountPath: /etc/github
@@ -65,34 +55,6 @@ periodics:
         --comment=Rotten issues close after 30d of inactivity.
         Reopen the issue with `/reopen`.
         Mark the issue as fresh with `/remove-lifecycle rotten`.
-
-        /close
-      - --template
-      - --ceiling=10
-      - --confirm
-- name: periodic-project-infra-close-build-watcher-triage
-  interval: 1h
-  annotations:
-    testgrid-create-test-group: "false"
-  labels:
-    preset-github-credentials: "true"
-  decorate: true
-  cluster: kubevirt-prow-control-plane
-  spec:
-    containers:
-    - image: gcr.io/k8s-staging-test-infra/commenter:v20240801-a5d9345e59
-      command:
-      - /ko-app/commenter
-      args:
-      - |-
-        --query=org:kubevirt
-          -label:lifecycle/frozen
-          label:triage/build-watcher
-      - --updated=336h
-      - --token=/etc/github/oauth
-      - |-
-        --comment=Issues triaged by the build watcher close after 14d of inactivity.
-        Reopen the issue with `/reopen`.
 
         /close
       - --template
@@ -163,6 +125,69 @@ periodics:
       - --template
       - --ceiling=10
       - --confirm
+- name: periodic-project-infra-needs-approver-review
+  interval: 1h
+  annotations:
+    testgrid-create-test-group: "false"
+  labels:
+    preset-github-credentials: "true"
+  decorate: true
+  cluster: kubevirt-prow-control-plane
+  spec:
+    containers:
+    - image: gcr.io/k8s-staging-test-infra/commenter:v20240801-a5d9345e59
+      command:
+      - /ko-app/commenter
+      args:
+      - |-
+        --query=org:kubevirt
+          is:open
+          is:pr
+          label:lgtm
+          -label:approved
+          -label:do-not-merge/work-in-progress
+          -label:needs-approver-review
+          -review:changes-requested
+          is:public
+      - --updated=168h
+      - --token=/etc/github/oauth
+      - |-
+        --comment=Pull requests that are marked with `lgtm` should receive a review
+        from an approver within 1 week.
+
+        After that period the bot marks them with the label `needs-approver-review`.
+
+        /label needs-approver-review
+      - --template
+      - --ceiling=10
+      - --confirm
+- name: periodic-project-infra-cleanup-needs-approver-review
+  interval: 1h
+  annotations:
+    testgrid-create-test-group: "false"
+  labels:
+    preset-github-credentials: "true"
+  decorate: true
+  cluster: kubevirt-prow-control-plane
+  spec:
+    containers:
+    - image: gcr.io/k8s-staging-test-infra/commenter:v20240801-a5d9345e59
+      command:
+      - /ko-app/commenter
+      args:
+      - |-
+        --query=org:kubevirt
+          is:closed
+          is:pr
+          label:needs-approver-review
+          is:public
+      - --token=/etc/github/oauth
+      - |-
+        --comment=/remove-label needs-approver-review
+      - --include-closed
+      - --template
+      - --ceiling=10
+      - --confirm
 - name: periodic-project-infra-autoowners
   interval: 24h
   annotations:
@@ -174,7 +199,6 @@ periodics:
   - org: kubevirt
     repo: project-infra
     base_ref: main
-    work_dir: true
   cluster: kubevirt-prow-control-plane
   spec:
     containers:
@@ -206,9 +230,9 @@ periodics:
   cluster: kubevirt-prow-control-plane
   spec:
     containers:
-      - image: quay.io/kubevirtci/indexpagecreator:v20230102-5ed6f7d7
+      - image: quay.io/kubevirtci/indexpagecreator:v20250106-68dbb05
         command:
-          - "/app/robots/cmd/indexpagecreator/app.binary"
+        - /usr/bin/indexpagecreator
         args:
           - --dry-run=false
 - name: periodic-kubevirt-mirror-uploader
@@ -239,17 +263,15 @@ periodics:
     securityContext:
       runAsUser: 0
     containers:
-      - image: quay.io/kubevirt/builder:2212180911-8818abcfa
-        command: ["/bin/sh"]
+      - image: quay.io/kubevirtci/pr-creator:v20260128-84f963a
+        command:
+        - /usr/local/bin/runner.sh
+        - /bin/bash
+        - -ce
         args:
-          - "-c"
-          - bazel_dir=$(mktemp -d) &&
-            curl --fail -L https://github.com/bazelbuild/bazelisk/releases/download/v1.7.4/bazelisk-linux-amd64 --output ${bazel_dir}/bazelisk &&
-            chmod a+x ${bazel_dir}/bazelisk &&
-            export PATH=${PATH}:${bazel_dir} &&
-            hack/git-pr.sh -c "bazelisk run //robots/cmd/uploader:uploader -- -workspace ${PWD}/../kubevirt/WORKSPACE -dry-run=false" -p ../kubevirt -r kubevirt -L lgtm,approved,release-note-none -T main &&
-            hack/git-pr.sh -c "bazelisk run //robots/cmd/uploader:uploader -- -workspace ${PWD}/../containerized-data-importer/WORKSPACE -dry-run=false" -p ../containerized-data-importer -r containerized-data-importer -T main -L lgtm,approved,release-note-none
-            hack/git-pr.sh -c "bazelisk run //robots/cmd/uploader:uploader -- -workspace ${PWD}/WORKSPACE -dry-run=false" -p ${PWD} -r project-infra -T main -L lgtm,approved,release-note-none
+        - |
+          git-pr.sh -c "go run ./robots/uploader -workspace ${PWD}/../kubevirt/WORKSPACE -dry-run=false" -p ../kubevirt -r kubevirt -L skip-review,release-note-none -T main
+          git-pr.sh -c "go run ./robots/uploader -workspace ${PWD}/../containerized-data-importer/WORKSPACE -dry-run=false" -p ../containerized-data-importer -r containerized-data-importer -T main -L skip-review,release-note-none
         resources:
           requests:
             memory: "200Mi"
@@ -277,15 +299,57 @@ periodics:
     securityContext:
       runAsUser: 0
     containers:
-      - image: quay.io/kubevirt/builder:2212180911-8818abcfa
-        command: ["/bin/sh"]
+      - image: quay.io/kubevirtci/pr-creator:v20260128-84f963a
+        command:
+        - /usr/local/bin/runner.sh
+        - /bin/bash
+        - -ce
         args:
-          - "-c"
-          - bazel_dir=$(mktemp -d) &&
-            curl --fail -L https://github.com/bazelbuild/bazelisk/releases/download/v1.7.4/bazelisk-linux-amd64 --output ${bazel_dir}/bazelisk &&
-            chmod a+x ${bazel_dir}/bazelisk &&
-            export PATH=${PATH}:${bazel_dir} &&
-            hack/git-pr.sh -c "bazelisk run //robots/cmd/kubevirtci-bumper:kubevirtci-bumper -- -ensure-last-three-minor-of v1 --k8s-provider-dir ${PWD}/../kubevirtci/cluster-provision/k8s" -p ../kubevirtci -r kubevirtci -b patch-version-bump -T main
+          - |
+            git-pr.sh \
+              -c "go run ./robots/kubevirtci-bumper -ensure-last-three-minor-of v1 --k8s-provider-dir ${PWD}/../kubevirtci/cluster-provision/k8s" \
+              -p ../kubevirtci \
+              -r kubevirtci \
+              -b patch-version-bump \
+              -T main \
+              -B $'Update KubeVirtCI provider patch versions\nFYI @kubevirt/sig-buildsystem\n/cc none' \
+              -L 'skip-review'
+        resources:
+          requests:
+            memory: "200Mi"
+- name: periodic-ci-health-sig-report-publish
+  interval: 6h
+  max_concurrency: 1
+  annotations:
+    testgrid-create-test-group: "false"
+  labels:
+    preset-gcs-credentials: "true"
+  decorate: true
+  decoration_config:
+    timeout: 1h
+    grace_period: 5m
+  extra_refs:
+  - org: kubevirt
+    repo: ci-health
+    base_ref: main
+    workdir: true
+  cluster: kubevirt-prow-control-plane
+  spec:
+    securityContext:
+      runAsUser: 0
+    containers:
+      - image: quay.io/kubevirtci/golang:v20251218-e7a7fc9
+        command:
+        - /usr/local/bin/runner.sh
+        - /bin/bash
+        - -ce
+        args:
+          - |
+            SIGS_TO_REPORT=("compute" "network" "storage" "operator" "monitoring")
+            for SIG in "${SIGS_TO_REPORT[@]}"; do
+              go run ./cmd/html-report --sig $SIG --results-path ./output/kubevirt/kubevirt/results.json --path /tmp/
+            done
+            gsutil cp /tmp/sig*.html gs://kubevirt-prow/reports/sig-failure-reports/
         resources:
           requests:
             memory: "200Mi"
@@ -313,11 +377,20 @@ periodics:
     securityContext:
       runAsUser: 0
     containers:
-      - image: quay.io/kubevirtci/pr-creator:v20240305-cb764ec
-        command: ["/bin/sh"]
+      - image: quay.io/kubevirtci/pr-creator:v20260128-84f963a
+        command:
+        - /usr/local/bin/runner.sh
+        - /bin/bash
+        - -ce
         args:
-          - "-c"
-          - git-pr.sh -c "bazel run //robots/cmd/kubevirtci-bumper:kubevirtci-bumper -- -ensure-latest --k8s-provider-dir ${PWD}/../kubevirtci/cluster-provision/k8s --cluster-up-dir ${PWD}/../kubevirtci/cluster-up/cluster" -p ../kubevirtci -r kubevirtci -b minor-version-bump -T main
+          - |
+            git-pr.sh \
+              -c "go run ./robots/kubevirtci-bumper -ensure-latest --k8s-provider-dir ${PWD}/../kubevirtci/cluster-provision/k8s --cluster-up-dir ${PWD}/../kubevirtci/cluster-up/cluster" \
+              -b minor-version-bump \
+              -r kubevirtci \
+              -p ../kubevirtci \
+              -T main \
+              -B $'Add KubeVirtCI provider latest minorversion\nFYI @kubevirt/sig-buildsystem\n/cc none'
         resources:
           requests:
             memory: "200Mi"
@@ -337,16 +410,56 @@ periodics:
     repo: project-infra
     base_ref: main
     workdir: true
+  - org: kubevirt
+    repo: kubevirtci
+    base_ref: main
   cluster: kubevirt-prow-control-plane
   spec:
     securityContext:
       runAsUser: 0
     containers:
-      - image: quay.io/kubevirtci/pr-creator:v20240305-cb764ec
+      - image: quay.io/kubevirtci/pr-creator:v20260128-84f963a
         command: ["/bin/sh"]
         args:
           - "-c"
           - git-pr.sh -c "./hack/bump-crio-mirror-versions.sh" -p ./ -r project-infra -b crio-version-bump -T main
+          - git-pr.sh -p ../kubevirtci -r kubevirtci -b crio-version-bump -s "Bump cri-o version to match provider version" -T main
+        resources:
+          requests:
+            memory: "200Mi"
+- name: periodic-bump-bootstrap-fedora-base-version
+  interval: 168h
+  max_concurrency: 1
+  annotations:
+    testgrid-create-test-group: "false"
+  labels:
+    preset-github-credentials: "true"
+  decorate: true
+  decoration_config:
+    timeout: 1h
+    grace_period: 5m
+  extra_refs:
+  - org: kubevirt
+    repo: project-infra
+    base_ref: main
+    workdir: true
+  cluster: kubevirt-prow-control-plane
+  spec:
+    securityContext:
+      runAsUser: 0
+    containers:
+      - image: quay.io/kubevirtci/pr-creator:v20260128-84f963a
+        command:
+        - "/bin/bash"
+        - -c
+        args:
+          - |
+              git-pr.sh \
+              -c "./hack/bump-fedora-images-version.sh ./images/bootstrap/Containerfile" \
+              -p ./ \
+              -r project-infra \
+              -b bootstrap-fedora-version-bump \
+              -T main
         resources:
           requests:
             memory: "200Mi"
@@ -374,13 +487,15 @@ periodics:
     securityContext:
       runAsUser: 0
     containers:
-      - image: quay.io/kubevirtci/pr-creator:v20240305-cb764ec
-        command: ["/bin/sh"]
+      - image: quay.io/kubevirtci/pr-creator:v20260128-84f963a
+        command:
+        - /usr/local/bin/runner.sh
+        - /bin/bash
+        - -ce
         args:
-          - "-ce"
           - |
             TEMP_FILE=$(mktemp)
-            if ! bazel run //robots/cmd/kubevirt check providers -- \
+            if ! go run ./robots/kubevirt check providers \
               --job-config-path-kubevirt-presubmits=${PWD}/github/ci/prow-deploy/files/jobs/kubevirt/kubevirt/kubevirt-presubmits.yaml \
               --job-config-path-kubevirt-periodics=${PWD}/github/ci/prow-deploy/files/jobs/kubevirt/kubevirt/kubevirt-periodics.yaml \
               --output-file=${TEMP_FILE} \
@@ -391,7 +506,11 @@ periodics:
               echo "unsupported kubevirtci providers are still in use, cancelling removal of unsupported kubevirtci providers!"
               exit 0
             fi
-            git-pr.sh -c "bazel run //robots/cmd/kubevirtci-bumper:kubevirtci-bumper -- -ensure-only-latest-three --k8s-provider-dir ${PWD}/../kubevirtci/cluster-provision/k8s --cluster-up-dir ${PWD}/../kubevirtci/cluster-up/cluster" -p ../kubevirtci -r kubevirtci -b remove-unsupported-versions -T main
+            git-pr.sh -c "go run ./robots/kubevirtci-bumper -ensure-only-latest-three --k8s-provider-dir ${PWD}/../kubevirtci/cluster-provision/k8s --cluster-up-dir ${PWD}/../kubevirtci/cluster-up/cluster" \
+              -p ../kubevirtci \
+              -r kubevirtci \
+              -b remove-unsupported-versions \
+              -T main
         resources:
           requests:
             memory: "200Mi"
@@ -416,12 +535,17 @@ periodics:
     securityContext:
       runAsUser: 0
     containers:
-      - image: quay.io/kubevirtci/pr-creator:v20240305-cb764ec
-        env:
-        command: ["/bin/sh"]
+      - image: quay.io/kubevirtci/pr-creator:v20260128-84f963a
+        command:
+        - /usr/local/bin/runner.sh
+        - /bin/bash
+        - -ce
         args:
-          - "-c"
-          - git-pr.sh -c "bazel run //robots/cmd/kubevirtci-presubmit-creator:kubevirtci-presubmit-creator -- --job-config-path-kubevirtci-presubmit=$(pwd)/github/ci/prow-deploy/files/jobs/kubevirt/kubevirtci/kubevirtci-presubmits.yaml --github-token-path= --dry-run=false" -r project-infra -b create-kubevirtci-presubmit -T main
+          - |
+            git-pr.sh -c "go run ./robots/kubevirtci-presubmit-creator --job-config-path-kubevirtci-presubmit=$(pwd)/github/ci/prow-deploy/files/jobs/kubevirt/kubevirtci/kubevirtci-presubmits.yaml --github-token-path= --dry-run=false" \
+              -r project-infra \
+              -b create-kubevirtci-presubmit \
+              -T main
         resources:
           requests:
             memory: "200Mi"
@@ -446,13 +570,15 @@ periodics:
     securityContext:
       runAsUser: 0
     containers:
-      - image: quay.io/kubevirtci/pr-creator:v20240305-cb764ec
-        command: ["/bin/sh"]
+      - image: quay.io/kubevirtci/pr-creator:v20260128-84f963a
+        command:
+        - /usr/local/bin/runner.sh
+        - /bin/bash
+        - -ce
         args:
-          - "-ce"
           - |
             TEMP_FILE=$(mktemp)
-            if ! bazel run //robots/cmd/kubevirt check providers -- \
+            if ! go run ./robots/kubevirt check providers \
               --job-config-path-kubevirt-presubmits=${PWD}/github/ci/prow-deploy/files/jobs/kubevirt/kubevirt/kubevirt-presubmits.yaml \
               --job-config-path-kubevirt-periodics=${PWD}/github/ci/prow-deploy/files/jobs/kubevirt/kubevirt/kubevirt-periodics.yaml \
               --output-file=${TEMP_FILE} \
@@ -463,7 +589,10 @@ periodics:
               echo "unsupported kubevirtci providers are still in use, cancelling removal of kubevirt presubmits!"
               exit 0
             fi
-            git-pr.sh -c "bazel run //robots/cmd/kubevirtci-presubmit-remover:kubevirtci-presubmit-remover -- --job-config-path-kubevirtci-presubmit=$(pwd)/github/ci/prow-deploy/files/jobs/kubevirt/kubevirtci/kubevirtci-presubmits.yaml --github-token-path= --dry-run=false" -r project-infra -b remove-kubevirtci-presubmit -T main
+            git-pr.sh -c "go run ./robots/kubevirtci-presubmit-remover --job-config-path-kubevirtci-presubmit=$(pwd)/github/ci/prow-deploy/files/jobs/kubevirt/kubevirtci/kubevirtci-presubmits.yaml --github-token-path= --dry-run=false" \
+              -r project-infra \
+              -b remove-kubevirtci-presubmit \
+              -T main
         resources:
           requests:
             memory: "200Mi"
@@ -474,7 +603,7 @@ periodics:
     preset-github-credentials: "true"
   decorate: true
   decoration_config:
-    timeout: 2h
+    timeout: 2h30m
     grace_period: 5m
   extra_refs:
   - org: kubevirt
@@ -487,7 +616,7 @@ periodics:
   spec:
     containers:
     - name: peribolos
-      image: us-docker.pkg.dev/k8s-infra-prow/images/peribolos:v20240827-195f38540
+      image: us-docker.pkg.dev/k8s-infra-prow/images/peribolos:v20260205-2d6316e3a
       command:
       - /ko-app/peribolos
       args:
@@ -524,15 +653,18 @@ periodics:
     repo: project-infra
     base_ref: main
     workdir: true
+  - org: kubernetes-sigs
+    repo: prow
+    base_ref: main
   cluster: kubevirt-prow-control-plane
   spec:
     containers:
-    - image: quay.io/kubevirtci/pr-creator:v20240305-cb764ec
+    - image: quay.io/kubevirtci/pr-creator:v20260128-84f963a
       command: ["/bin/sh"]
       args:
       - "-ce"
       - |
-        hack/git-pr.sh -c "hack/bump-prow.sh" -b prow-autobump -r project-infra -T main -B $'Bump Prow\n\n/cc @kubevirt/prow-job-taskforce'
+        hack/git-pr.sh -c "hack/bump-prow.sh" -b prow-autobump -r project-infra -T main -d "./hack/prow-changelog.sh"
       securityContext:
         privileged: true
       resources:
@@ -554,10 +686,10 @@ periodics:
     repo: project-infra
     base_ref: main
     workdir: true
-  cluster: kubevirt-prow-workloads
+  cluster: prow-workloads
   spec:
     containers:
-    - image: quay.io/kubevirtci/bootstrap:v20240829-fb5890c
+    - image: quay.io/kubevirtci/bootstrap:v20251218-e7a7fc9
       command: ["/bin/sh"]
       args:
       - "-ce"
@@ -588,11 +720,19 @@ periodics:
     securityContext:
       runAsUser: 0
     containers:
-      - image: quay.io/kubevirtci/pr-creator:v20240305-cb764ec
-        command: [ "/bin/sh" , "-c" ]
+      - image: quay.io/kubevirtci/pr-creator:v20260128-84f963a
+        command:
+        - /usr/local/bin/runner.sh
+        - /bin/bash
+        - -ce
         args:
           - |
-            git-pr.sh -c "bazel run //robots/cmd/kubevirt require presubmits -- --job-config-path-kubevirt-presubmits=$(pwd)/github/ci/prow-deploy/files/jobs/kubevirt/kubevirt/kubevirt-presubmits.yaml --github-token-path= --dry-run=false && bazel run //robots/cmd/kubevirt remove always_run -- --job-config-path-kubevirt-presubmits=$(pwd)/github/ci/prow-deploy/files/jobs/kubevirt/kubevirt/kubevirt-presubmits.yaml --github-token-path= --dry-run=false" -r project-infra -b require-kubevirt-presubmits -T main -s 'Enable e2e lanes for latest kubernetes version' -B $'Enable lanes for latest kubernetes version and disable lanes with unsupported version\n\n/cc @kubevirt/prow-job-taskforce'
+            git-pr.sh -c "go run ./robots/kubevirt require presubmits --job-config-path-kubevirt-presubmits=$(pwd)/github/ci/prow-deploy/files/jobs/kubevirt/kubevirt/kubevirt-presubmits.yaml --github-token-path= --dry-run=false && go run ./robots/kubevirt remove always_run --job-config-path-kubevirt-presubmits=$(pwd)/github/ci/prow-deploy/files/jobs/kubevirt/kubevirt/kubevirt-presubmits.yaml --github-token-path= --dry-run=false" \
+              -r project-infra \
+              -b require-kubevirt-presubmits \
+              -T main \
+              -s 'Enable e2e lanes for latest kubernetes version' \
+              -B $'Enable lanes for latest kubernetes version and disable lanes with unsupported version\n\n/cc @kubevirt/prow-job-taskforce'
 
         resources:
           requests:
@@ -618,16 +758,20 @@ periodics:
     securityContext:
       runAsUser: 0
     containers:
-    - image: quay.io/kubevirtci/pr-creator:v20240305-cb764ec
-      env:
-      command: [ "/bin/sh" , "-c" ]
+    - image: quay.io/kubevirtci/pr-creator:v20260128-84f963a
+      command:
+      - /usr/local/bin/runner.sh
+      - /bin/bash
+      - -ce
       args:
       - |
-        git-pr.sh -c "bazel run //robots/cmd/kubevirt copy jobs -- --job-config-path-kubevirt-presubmits=$(pwd)/github/ci/prow-deploy/files/jobs/kubevirt/kubevirt/kubevirt-presubmits.yaml --job-config-path-kubevirt-periodics=$(pwd)/github/ci/prow-deploy/files/jobs/kubevirt/kubevirt/kubevirt-periodics.yaml --github-token-path= --dry-run=false" -r project-infra -b copy-kubevirt-jobs -T main
+        git-pr.sh -c "go run ./robots/kubevirt copy jobs --job-config-path-kubevirt-presubmits=$(pwd)/github/ci/prow-deploy/files/jobs/kubevirt/kubevirt/kubevirt-presubmits.yaml --job-config-path-kubevirt-periodics=$(pwd)/github/ci/prow-deploy/files/jobs/kubevirt/kubevirt/kubevirt-periodics.yaml --github-token-path= --dry-run=false" \
+          -r project-infra \
+          -b copy-kubevirt-jobs \
+          -T main
       resources:
         requests:
           memory: "200Mi"
-
 - name: periodic-kubevirt-job-remover
   cron: "30 0 * * *"
   max_concurrency: 1
@@ -649,16 +793,20 @@ periodics:
     securityContext:
       runAsUser: 0
     containers:
-    - image: quay.io/kubevirtci/pr-creator:v20240305-cb764ec
-      env:
-      command: [ "/bin/sh" , "-c" ]
+    - image: quay.io/kubevirtci/pr-creator:v20260128-84f963a
+      command:
+      - /usr/local/bin/runner.sh
+      - /bin/bash
+      - -ce
       args:
       - |
-        git-pr.sh -c "bazel run //robots/cmd/kubevirt remove jobs -- --job-config-path-kubevirt-presubmits=$(pwd)/github/ci/prow-deploy/files/jobs/kubevirt/kubevirt/kubevirt-presubmits.yaml --job-config-path-kubevirt-periodics=$(pwd)/github/ci/prow-deploy/files/jobs/kubevirt/kubevirt/kubevirt-periodics.yaml --github-token-path= --dry-run=false" -r project-infra -b remove-kubevirt-jobs -T main
+        git-pr.sh -c "go run ./robots/kubevirt remove jobs --job-config-path-kubevirt-presubmits=$(pwd)/github/ci/prow-deploy/files/jobs/kubevirt/kubevirt/kubevirt-presubmits.yaml --job-config-path-kubevirt-periodics=$(pwd)/github/ci/prow-deploy/files/jobs/kubevirt/kubevirt/kubevirt-periodics.yaml --github-token-path= --dry-run=false" \
+          -r project-infra \
+          -b remove-kubevirt-jobs \
+          -T main
       resources:
         requests:
           memory: "200Mi"
-
 - name: periodic-project-infra-mirror-istioctl
   cron: "25 1 * * 1"
   decorate: true
@@ -679,12 +827,12 @@ periodics:
   cluster: kubevirt-prow-control-plane
   spec:
     containers:
-      - image: quay.io/kubevirtci/bootstrap:v20240829-fb5890c
+      - image: quay.io/kubevirtci/bootstrap:v20251218-e7a7fc9
         env:
           - name: BUCKET_DIR
             value: kubevirtci-istioctl-mirror
           - name: ISTIO_VERSIONS
-            value: "1.10.0,1.13.0,1.14.0,1.15.0"
+            value: "1.15.0,1.24.4,1.26.4"
         command: ["/bin/sh", "-c"]
         args:
           - |
@@ -693,7 +841,6 @@ periodics:
         resources:
           requests:
             memory: "2Gi"
-
 - name: periodic-project-infra-prow-job-image-bump
   cron: "30 0 * * *"
   max_concurrency: 1
@@ -715,16 +862,21 @@ periodics:
     securityContext:
       runAsUser: 0
     containers:
-    - image: quay.io/kubevirtci/pr-creator:v20240305-cb764ec
+    - image: quay.io/kubevirtci/pr-creator:v20260128-84f963a
       command:
       - /usr/local/bin/runner.sh
       - /bin/sh
       - -c
       args:
       - |
-        if labels-checker --org=kubevirt --repo=kubevirt --author=kubevirt-bot --branch-name=prow-job-image-bump --ensure-labels-missing=lgtm,approved,do-not-merge/hold --github-token-path=/etc/github/oauth; then
-          hack/git-pr.sh -c "hack/bump-prow-job-images.sh" -b prow-job-image-bump -r project-infra -T main -B $'Bump Prow Job images\n@kubevirt/prow-job-taskforce\n/cc none'
-        fi
+        hack/git-pr.sh \
+          -c "hack/bump-prow-job-images.sh" \
+          -b prow-job-image-bump \
+          -r project-infra \
+          -T main \
+          -d "hack/describe-pr-from-updated-images-in-diff.sh 'Bump Prow Job images'" \
+          -L 'skip-review' \
+          -M 'lgtm,approved,do-not-merge/hold,skip-review'
       resources:
         requests:
           memory: "200Mi"
@@ -749,19 +901,105 @@ periodics:
     securityContext:
       runAsUser: 0
     containers:
-    - image: quay.io/kubevirtci/pr-creator:v20240305-cb764ec
+    - image: quay.io/kubevirtci/pr-creator:v20260128-84f963a
       command:
       - /usr/local/bin/runner.sh
       - /bin/sh
       - -c
       args:
       - |
-        if labels-checker --org=kubevirt --repo=kubevirt --author=kubevirt-bot --branch-name=prow-deployment-image-bump --ensure-labels-missing=lgtm,approved,do-not-merge/hold --github-token-path=/etc/github/oauth; then
-          hack/git-pr.sh -c "hack/bump-prow-deployment-images.sh" -b prow-deployment-image-bump -r project-infra -T main -B $'Bump Prow Deployment images\nFYI @kubevirt/prow-job-taskforce\n/cc none'
-        fi
+        hack/git-pr.sh \
+          -c "hack/bump-prow-deployment-images.sh" \
+          -b prow-deployment-image-bump \
+          -r project-infra \
+          -T main \
+          -d "hack/describe-pr-from-updated-images-in-diff.sh 'Bump Prow Deployment images'" \
+          -L 'skip-review' \
+          -M lgtm,approved,do-not-merge/hold,skip-review
       resources:
         requests:
           memory: "200Mi"
+- name: periodic-project-infra-containerfile-image-bump
+  cron: "0 1 * * *"
+  max_concurrency: 1
+  annotations:
+    testgrid-create-test-group: "false"
+  labels:
+    preset-github-credentials: "true"
+  decorate: true
+  decoration_config:
+    timeout: 1h
+    grace_period: 5m
+  extra_refs:
+  - org: kubevirt
+    repo: project-infra
+    base_ref: main
+    workdir: true
+  cluster: kubevirt-prow-control-plane
+  spec:
+    securityContext:
+      runAsUser: 0
+    containers:
+    - image: quay.io/kubevirtci/pr-creator:v20260128-84f963a
+      command:
+      - /usr/local/bin/runner.sh
+      - /bin/sh
+      - -c
+      args:
+      - |
+        git-pr.sh \
+          -c "hack/bump-containerfile-images.sh" \
+          -b containerfile-image-bump \
+          -r project-infra \
+          -T main \
+          -d "hack/describe-pr-from-updated-images-in-diff.sh 'Bump Containerfile base images'" \
+          -L 'skip-review' \
+          -M 'lgtm,approved,do-not-merge/hold,skip-review'
+      resources:
+        requests:
+          memory: "200Mi"
+- name: periodic-project-infra-gcp-cluster-deprovision
+  cron: "45 7 * * *"
+  max_concurrency: 1
+  annotations:
+    testgrid-create-test-group: "false"
+  decorate: true
+  decoration_config:
+    timeout: 4h
+    grace_period: 5m
+  extra_refs:
+  - org: kubevirt
+    repo: project-infra
+    base_ref: main
+    workdir: true
+  cluster: kubevirt-prow-control-plane
+  spec:
+    containers:
+    - image: registry.ci.openshift.org/ci/ipi-deprovision:latest
+      imagePullPolicy: Always
+      command:
+      - hack/gcp-cluster-deprovision.sh
+      env:
+      - name: HOME
+        value: /tmp
+      - name: GCP_PROJECT
+        value: kubevirt-240711
+      - name: CLUSTER_TTL
+        value: 30 minutes ago
+      - name: GOOGLE_APPLICATION_CREDENTIALS
+        value: /etc/gcs/virtci-service-account.json
+      resources:
+        requests:
+          memory: "300Mi"
+      volumeMounts:
+      - name: virtci-gcs
+        mountPath: /etc/gcs
+        readOnly: true
+    volumes:
+    - name: virtci-gcs
+      secret:
+        secretName: virtci-gcs
+        defaultMode: 0400
 - annotations:
     testgrid-create-test-group: "false"
   cluster: kubevirt-prow-control-plane
@@ -784,16 +1022,13 @@ periodics:
   name: periodic-project-infra-check-prow-jobconfigs
   spec:
     containers:
-    - image: quay.io/kubevirtci/golang:v20240829-fb5890c
-      env:
-      - name: GIMME_GO_VERSION
-        value: "1.20"
+    - image: quay.io/kubevirtci/golang:v20251218-e7a7fc9
       command:
       - "/usr/local/bin/runner.sh"
       - "/bin/sh"
       - "-ce"
       - |
-        ( cd robots/cmd/job-config-validator && go build ./... )
+        ( cd robots/job-config-validator && go build ./... )
 
         curl -Lo ./yq https://github.com/mikefarah/yq/releases/download/3.4.1/yq_linux_amd64
         chmod +x ./yq && mv ./yq /usr/local/bin/yq
@@ -802,37 +1037,7 @@ periodics:
         decrypt_secrets
         extract_secret 'kubeconfig' ~/.kube/config
 
-        ./robots/cmd/job-config-validator/job-config-validator
-      resources:
-        requests:
-          memory: "1Gi"
-- annotations:
-    testgrid-create-test-group: "false"
-  cluster: kubevirt-prow-control-plane
-  decorate: true
-  decoration_config:
-    timeout: 1h
-    grace_period: 5m
-  extra_refs:
-  - org: kubevirt
-    repo: project-infra
-    base_ref: main
-    workdir: true
-  interval: 168h
-  labels:
-    preset-bazel-cache: "true"
-    preset-github-credentials: "true"
-  max_concurrency: 1
-  name: periodic-project-infra-dependabot-update
-  spec:
-    containers:
-    - image: quay.io/kubevirtci/pr-creator:v20240305-cb764ec
-      env:
-      command: ["/bin/sh"]
-      args:
-      - "-ce"
-      - |
-        ./hack/git-pr.sh -c "bazel run //robots/cmd/dependabot:dependabot -- --github-token-path /etc/github/oauth --repo project-infra --org kubevirt --repo-dir $(pwd) && make gazelle gazelle-update-repos test" -b dependabot-update -r project-infra -T main
+        ./robots/job-config-validator/job-config-validator
       resources:
         requests:
           memory: "1Gi"
@@ -857,10 +1062,12 @@ periodics:
   name: periodic-project-infra-perf-report-creator
   spec:
     containers:
-    - image: quay.io/kubevirtci/golang:v20240829-fb5890c
+    - image: quay.io/kubevirtci/golang:v20251218-e7a7fc9
       env:
+        - name: KUBEVIRT_PROVIDER
+          value: k8s-1.34
         - name: GIMME_GO_VERSION
-          value: "1.20"
+          value: "1.25.1"
         - name: GIT_AUTHOR_NAME
           value: kubevirt-bot
         - name: GIT_AUTHOR_EMAIL
@@ -872,7 +1079,7 @@ periodics:
         - "/bin/sh"
         - "-ce"
         - |
-          go build -o /usr/local/bin/perf-report-creator ./robots/cmd/perf-report-creator/...
+          go build -o /usr/local/bin/perf-report-creator ./robots/perf-report-creator/...
           (
             cd ..
             git clone "https://kubevirt-bot@github.com/$TARGET_GITHUB_REPO.git"
@@ -882,8 +1089,8 @@ periodics:
           )
           scrape_dir=$(mktemp -d)
           ci_perf_repo_dir=$(cd ../ci-performance-benchmarks && pwd)
-          ./robots/cmd/perf-report-creator/scrape.sh $GOOGLE_APPLICATION_CREDENTIALS $ci_perf_repo_dir $scrape_dir
-          ./robots/cmd/perf-report-creator/graph.sh $ci_perf_repo_dir
+          ./robots/perf-report-creator/scrape.sh $GOOGLE_APPLICATION_CREDENTIALS $ci_perf_repo_dir $scrape_dir $KUBEVIRT_PROVIDER
+          ./robots/perf-report-creator/graph.sh $ci_perf_repo_dir $KUBEVIRT_PROVIDER
           cd $ci_perf_repo_dir
           git add -A results weekly
           current_date=$(date --iso-8601=date)
@@ -892,3 +1099,127 @@ periodics:
       resources:
         requests:
           memory: "1Gi"
+
+# Check the health of the Prow workloads clusters.
+# They appear in the testgrid dashboard: https://testgrid.k8s.io/kubevirt-project-infra-periodics
+# Failures are notified by testgrid to the KubeVirt CI maintainers mailing list.
+- name: periodic-project-infra-prow-workloads-livez
+  annotations: &cluster_livez_annotations
+    testgrid-dashboards: kubevirt-project-infra-periodics
+    testgrid-days-of-results: "30"
+    testgrid-num-failures-to-alert: "1"
+    testgrid-alert-email: kubevirt-ci-maintainers@redhat.com
+  cluster: kubevirt-prow-control-plane
+  decorate: true
+  decoration_config:
+    timeout: 5m
+    grace_period: 1m
+  interval: 1h
+  max_concurrency: 1
+  spec:
+    containers:
+    - &cluster_livez_container
+      image: quay.io/curl/curl:8.14.1
+      command:
+      - curl
+      args:
+      - --fail-with-body
+      - --insecure
+      - --silent
+      - --show-error
+      - $(CLUSTER_LIVEZ_ENDPOINT)
+      env:
+      - name: CLUSTER_LIVEZ_ENDPOINT
+        value: https://api.prow-workloads.ci.kubevirt.io:6443/livez?verbose
+      resources: &cluster_livez_resources
+        requests:
+          memory: 100Mi
+      securityContext:
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop: [ALL]
+        seccompProfile:
+          type: RuntimeDefault
+- name: periodic-project-infra-prow-amd-workloads-livez
+  annotations: *cluster_livez_annotations
+  cluster: kubevirt-prow-control-plane
+  decorate: true
+  decoration_config:
+    timeout: 5m
+    grace_period: 1m
+  interval: 30m
+  max_concurrency: 1
+  spec:
+    containers:
+    - <<: *cluster_livez_container
+      env:
+      - name: CLUSTER_LIVEZ_ENDPOINT
+        value: https://165.204.53.121:30128/livez?verbose
+- name: periodic-project-infra-prow-arm64-workloads-livez
+  annotations: *cluster_livez_annotations
+  cluster: kubevirt-prow-control-plane
+  decorate: true
+  decoration_config:
+    timeout: 5m
+    grace_period: 1m
+  extra_refs:
+  - org: kubevirt
+    repo: project-infra
+    base_ref: main
+    clone_depth: 1
+  interval: 30m
+  labels:
+    preset-github-credentials: "true"
+    preset-pgp-bot-key: "true"
+  max_concurrency: 1
+  spec:
+    containers:
+    - image: quay.io/kubevirtci/bootstrap:v20251218-e7a7fc9
+      command:
+      - /usr/local/bin/runner.sh
+      - /bin/bash
+      - -ce
+      args:
+      - |
+        source ./hack/manage-secrets.sh
+        decrypt_secrets
+        extract_secret 'kubeconfig' ~/.kube/config
+
+        kubectl get --context='prow-arm64-workloads' --raw '/k8s/clusters/c-zvkv8/livez?verbose'
+      resources: *cluster_livez_resources
+      securityContext:
+        runAsUser: 0
+- name: periodic-project-infra-prow-hyperv-workloads-livez
+  annotations:
+    <<: *cluster_livez_annotations
+    testgrid-alert-email: kubevirt-ci-maintainers@redhat.com, guptaharshit@microsoft.com
+  cluster: kubevirt-prow-control-plane
+  decorate: true
+  decoration_config:
+    timeout: 5m
+    grace_period: 1m
+  interval: 1h
+  max_concurrency: 1
+  spec:
+    containers:
+    - <<: *cluster_livez_container
+      env:
+      - name: CLUSTER_LIVEZ_ENDPOINT
+        value: https://l1vh-prow-test-0.westus3.cloudapp.azure.com:6443/livez?verbose
+- name: periodic-project-infra-prow-s390x-workloads-livez
+  annotations:
+    <<: *cluster_livez_annotations
+    testgrid-alert-email: kubevirt-ci-maintainers@redhat.com, jschinta@redhat.com, cfilleke@redhat.com, svamsikr@redhat.com
+  cluster: kubevirt-prow-control-plane
+  decorate: true
+  decoration_config:
+    timeout: 5m
+    grace_period: 1m
+  interval: 1h
+  max_concurrency: 1
+  spec:
+    containers:
+    - <<: *cluster_livez_container
+      env:
+      - name: CLUSTER_LIVEZ_ENDPOINT
+        value: https://195.212.74.206:6443/livez?verbose

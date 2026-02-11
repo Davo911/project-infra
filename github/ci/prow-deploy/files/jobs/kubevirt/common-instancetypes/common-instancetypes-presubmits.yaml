@@ -13,9 +13,10 @@ presubmits:
     cluster: kubevirt-prow-control-plane
     spec:
       containers:
-      - image: quay.io/kubevirtci/common-instancetypes-builder:v20240802-59e70de
+      - image: quay.io/kubevirtci/common-instancetypes-builder:v20251215-3d1a8ecb
         command:
-        - "/bin/bash"
+        - /usr/local/bin/runner.sh
+        - "/bin/sh"
         - "-c"
         - "make check-tree-clean all && cp _build/* /logs/artifacts"
         resources:
@@ -26,7 +27,7 @@ presubmits:
       - main
     always_run: false
     run_if_changed: "instancetypes/.*|preferences/.*|scripts/.*|tests/functests/.*|tests/vendor/.*|tests/go.*"
-    cluster: kubevirt-prow-workloads
+    cluster: prow-workloads
     decorate: true
     decoration_config:
       grace_period: 5m0s
@@ -47,11 +48,13 @@ presubmits:
         - "-c"
         - "make kubevirt-up && make kubevirt-sync && make kubevirt-functest"
         env:
+        - name: GIMME_GO_VERSION
+          value: 1.24.5
         - name: KUBEVIRT_MEMORY_SIZE
           value: 16G
         - name: FUNCTEST_EXTRA_ARGS
           value: '--ginkgo.skip="VirtualMachine using a preference is able to boot"'
-        image: quay.io/kubevirtci/golang:v20240829-fb5890c
+        image: quay.io/kubevirtci/golang:v20251218-e7a7fc9
         name: ""
         resources:
           requests:
@@ -65,7 +68,7 @@ presubmits:
       - main
     always_run: false
     run_if_changed: "preferences/base/.*|preferences/components/.*|preferences/fedora/.*|tests/functests/.*|tests/vendor/.*|tests/go.*"
-    cluster: kubevirt-prow-workloads
+    cluster: prow-workloads
     decorate: true
     decoration_config:
       grace_period: 5m0s
@@ -86,11 +89,13 @@ presubmits:
         - "-c"
         - "make kubevirt-up && make kubevirt-sync && make kubevirt-functest"
         env:
+        - name: GIMME_GO_VERSION
+          value: 1.24.5
         - name: KUBEVIRT_MEMORY_SIZE
           value: 16G
         - name: FUNCTEST_EXTRA_ARGS
           value: '--ginkgo.focus="VirtualMachine using a preference is able to boot a Linux guest with .*Fedora"'
-        image: quay.io/kubevirtci/golang:v20240829-fb5890c
+        image: quay.io/kubevirtci/golang:v20251218-e7a7fc9
         name: ""
         resources:
           requests:
@@ -99,19 +104,19 @@ presubmits:
           privileged: true
       nodeSelector:
         type: bare-metal-external
-  - name: pull-common-instancetypes-kubevirt-functest-fedora-arm64
+  - name: pull-common-instancetypes-kubevirt-functest-fedora-s390x
     branches:
       - main
     always_run: false
-    run_if_changed: "preferences/base/.*|preferences/components/.*|preferences/fedora/.*|tests/functests/.*|tests/vendor/.*|tests/go.*"
-    cluster: prow-arm64-workloads
+    run_if_changed: "preferences/base/.*|preferences/components/.*|preferences/linux/.*|preferences/linux-efi/.*|preferences/fedora/.*|tests/functests/.*|tests/vendor/.*|tests/go.*"
+    cluster: prow-s390x-workloads
     decorate: true
     decoration_config:
       grace_period: 5m0s
       timeout: 1h0m0s
     labels:
-      preset-bazel-unnested: "false"
       preset-podman-in-container-enabled: "true"
+      preset-kubevirt-s390x-icr-credential: "true"
     max_concurrency: 1
     optional: true
     spec:
@@ -120,80 +125,31 @@ presubmits:
         - /usr/local/bin/runner.sh
         - "/bin/sh"
         - "-c"
-        - "make kubevirt-up && make kubevirt-sync && make kubevirt-functest"
+        - "make cluster-up && make cluster-sync && make cluster-functest"
         env:
-        - name: KUBEVIRT_PROVIDER
-          value: kind-1.28
+        - name: GIMME_GO_VERSION
+          value: 1.24.5
         - name: KUBEVIRT_MEMORY_SIZE
           value: 16G
+        - name: KUBEVIRT_ONLY_USE_TAGS
+          value: "true"
+        - name: KUBEVIRT_BUILDER_IMAGE
+          value: icr.io/kubevirt/builder:2405141107-77fe60855
         - name: FUNCTEST_EXTRA_ARGS
           value: '--ginkgo.focus="VirtualMachine using a preference is able to boot a Linux guest with .*Fedora"'
-        image: quay.io/kubevirtci/golang:v20240829-fb5890c
+        image: quay.io/kubevirtci/golang:v20251218-e7a7fc9
         name: ""
         resources:
           requests:
             memory: 20Gi
         securityContext:
           privileged: true
-        volumeMounts:
-        - mountPath: /sys/fs/cgroup
-          name: cgroup
-        - mountPath: /var/log/audit
-          name: audit
-      volumes:
-      - hostPath:
-          path: /sys/fs/cgroup
-          type: Directory
-        name: cgroup
-      - hostPath:
-          path: /var/log/audit
-          type: Directory
-        name: audit
-  - name: pull-common-instancetypes-kubevirt-functest-centos-7
-    branches:
-      - main
-    always_run: false
-    run_if_changed: "preferences/base/.*|preferences/components/.*|preferences/centos/.*|tests/functests/.*|tests/vendor/.*|tests/go.*"
-    cluster: kubevirt-prow-workloads
-    decorate: true
-    decoration_config:
-      grace_period: 5m0s
-      timeout: 1h0m0s
-    labels:
-      preset-bazel-cache: "true"
-      preset-bazel-unnested: "true"
-      preset-docker-mirror-proxy: "true"
-      preset-podman-in-container-enabled: "true"
-      preset-podman-shared-images: "true"
-      preset-shared-images: "true"
-    max_concurrency: 1
-    spec:
-      containers:
-      - command:
-        - /usr/local/bin/runner.sh
-        - "/bin/sh"
-        - "-c"
-        - "make kubevirt-up && make kubevirt-sync && make kubevirt-functest"
-        env:
-        - name: KUBEVIRT_MEMORY_SIZE
-          value: 16G
-        - name: FUNCTEST_EXTRA_ARGS
-          value: '--ginkgo.focus="VirtualMachine using a preference is able to boot a Linux guest with .*CentOS 7"'
-        image: quay.io/kubevirtci/golang:v20240829-fb5890c
-        name: ""
-        resources:
-          requests:
-            memory: 20Gi
-        securityContext:
-          privileged: true
-      nodeSelector:
-        type: bare-metal-external
   - name: pull-common-instancetypes-kubevirt-functest-centos-stream-8
     branches:
       - main
     always_run: false
     run_if_changed: "preferences/base/.*|preferences/components/.*|preferences/centos/.*|tests/functests/.*|tests/vendor/.*|tests/go.*"
-    cluster: kubevirt-prow-workloads
+    cluster: prow-workloads
     decorate: true
     decoration_config:
       grace_period: 5m0s
@@ -214,11 +170,13 @@ presubmits:
         - "-c"
         - "make kubevirt-up && make kubevirt-sync && make kubevirt-functest"
         env:
+        - name: GIMME_GO_VERSION
+          value: 1.24.5
         - name: KUBEVIRT_MEMORY_SIZE
           value: 16G
         - name: FUNCTEST_EXTRA_ARGS
           value: '--ginkgo.focus="VirtualMachine using a preference is able to boot a Linux guest with .*CentOS Stream 8"'
-        image: quay.io/kubevirtci/golang:v20240829-fb5890c
+        image: quay.io/kubevirtci/golang:v20251218-e7a7fc9
         name: ""
         resources:
           requests:
@@ -227,12 +185,12 @@ presubmits:
           privileged: true
       nodeSelector:
         type: bare-metal-external
-  - name: pull-common-instancetypes-kubevirt-functest-centos-stream-9
+  - name: pull-common-instancetypes-kubevirt-functest-stream-9
     branches:
       - main
     always_run: false
     run_if_changed: "preferences/base/.*|preferences/components/.*|preferences/centos/.*|tests/functests/.*|tests/vendor/.*|tests/go.*"
-    cluster: kubevirt-prow-workloads
+    cluster: prow-workloads
     decorate: true
     decoration_config:
       grace_period: 5m0s
@@ -253,11 +211,13 @@ presubmits:
         - "-c"
         - "make kubevirt-up && make kubevirt-sync && make kubevirt-functest"
         env:
+        - name: GIMME_GO_VERSION
+          value: 1.24.5
         - name: KUBEVIRT_MEMORY_SIZE
           value: 16G
         - name: FUNCTEST_EXTRA_ARGS
           value: '--ginkgo.focus="VirtualMachine using a preference is able to boot a Linux guest with .*CentOS Stream 9"'
-        image: quay.io/kubevirtci/golang:v20240829-fb5890c
+        image: quay.io/kubevirtci/golang:v20251218-e7a7fc9
         name: ""
         resources:
           requests:
@@ -266,21 +226,24 @@ presubmits:
           privileged: true
       nodeSelector:
         type: bare-metal-external
-  - name: pull-common-instancetypes-kubevirt-functest-centos-stream-arm64
+  - name: pull-common-instancetypes-kubevirt-functest-stream-10
     branches:
       - main
     always_run: false
     run_if_changed: "preferences/base/.*|preferences/components/.*|preferences/centos/.*|tests/functests/.*|tests/vendor/.*|tests/go.*"
-    cluster: prow-arm64-workloads
+    cluster: prow-workloads
     decorate: true
     decoration_config:
       grace_period: 5m0s
       timeout: 1h0m0s
     labels:
-      preset-bazel-unnested: "false"
+      preset-bazel-cache: "true"
+      preset-bazel-unnested: "true"
+      preset-docker-mirror-proxy: "true"
       preset-podman-in-container-enabled: "true"
+      preset-podman-shared-images: "true"
+      preset-shared-images: "true"
     max_concurrency: 1
-    optional: true
     spec:
       containers:
       - command:
@@ -289,39 +252,27 @@ presubmits:
         - "-c"
         - "make kubevirt-up && make kubevirt-sync && make kubevirt-functest"
         env:
-        - name: KUBEVIRT_PROVIDER
-          value: kind-1.28
+        - name: GIMME_GO_VERSION
+          value: 1.24.5
         - name: KUBEVIRT_MEMORY_SIZE
           value: 16G
         - name: FUNCTEST_EXTRA_ARGS
-          value: '--ginkgo.focus="VirtualMachine using a preference is able to boot a Linux guest with .*CentOS Stream 9"'
-        image: quay.io/kubevirtci/golang:v20240829-fb5890c
+          value: '--ginkgo.focus="VirtualMachine using a preference is able to boot a Linux guest with .*CentOS Stream 10"'
+        image: quay.io/kubevirtci/golang:v20251218-e7a7fc9
         name: ""
         resources:
           requests:
             memory: 20Gi
         securityContext:
           privileged: true
-        volumeMounts:
-        - mountPath: /sys/fs/cgroup
-          name: cgroup
-        - mountPath: /var/log/audit
-          name: audit
-      volumes:
-      - hostPath:
-          path: /sys/fs/cgroup
-          type: Directory
-        name: cgroup
-      - hostPath:
-          path: /var/log/audit
-          type: Directory
-        name: audit
+      nodeSelector:
+        type: bare-metal-external
   - name: pull-common-instancetypes-kubevirt-functest-ubuntu
     branches:
       - main
     always_run: false
     run_if_changed: "preferences/base/.*|preferences/components/.*|preferences/ubuntu/.*|tests/functests/.*|tests/vendor/.*|tests/go.*"
-    cluster: kubevirt-prow-workloads
+    cluster: prow-workloads
     decorate: true
     decoration_config:
       grace_period: 5m0s
@@ -342,11 +293,13 @@ presubmits:
         - "-c"
         - "make kubevirt-up && make kubevirt-sync && make kubevirt-functest"
         env:
+        - name: GIMME_GO_VERSION
+          value: 1.24.5
         - name: KUBEVIRT_MEMORY_SIZE
           value: 16G
         - name: FUNCTEST_EXTRA_ARGS
           value: '--ginkgo.focus="VirtualMachine using a preference is able to boot a Linux guest with .*Ubuntu"'
-        image: quay.io/kubevirtci/golang:v20240829-fb5890c
+        image: quay.io/kubevirtci/golang:v20251218-e7a7fc9
         name: ""
         resources:
           requests:
@@ -355,62 +308,12 @@ presubmits:
           privileged: true
       nodeSelector:
         type: bare-metal-external
-  - name: pull-common-instancetypes-kubevirt-functest-ubuntu-arm64
-    branches:
-      - main
-    always_run: false
-    run_if_changed: "preferences/base/.*|preferences/components/.*|preferences/ubuntu/.*|tests/functests/.*|tests/vendor/.*|tests/go.*"
-    cluster: prow-arm64-workloads
-    decorate: true
-    decoration_config:
-      grace_period: 5m0s
-      timeout: 1h0m0s
-    labels:
-      preset-bazel-unnested: "false"
-      preset-podman-in-container-enabled: "true"
-    max_concurrency: 1
-    optional: true
-    spec:
-      containers:
-      - command:
-        - /usr/local/bin/runner.sh
-        - "/bin/sh"
-        - "-c"
-        - "make kubevirt-up && make kubevirt-sync && make kubevirt-functest"
-        env:
-        - name: KUBEVIRT_PROVIDER
-          value: kind-1.28
-        - name: KUBEVIRT_MEMORY_SIZE
-          value: 16G
-        - name: FUNCTEST_EXTRA_ARGS
-          value: '--ginkgo.focus="VirtualMachine using a preference is able to boot a Linux guest with .*Ubuntu"'
-        image: quay.io/kubevirtci/golang:v20240829-fb5890c
-        name: ""
-        resources:
-          requests:
-            memory: 20Gi
-        securityContext:
-          privileged: true
-        volumeMounts:
-        - mountPath: /sys/fs/cgroup
-          name: cgroup
-        - mountPath: /var/log/audit
-          name: audit
-      volumes:
-      - hostPath:
-          path: /sys/fs/cgroup
-          type: Directory
-        name: cgroup
-      - hostPath:
-          path: /var/log/audit
-          type: Directory
-        name: audit
   - name: pull-common-instancetypes-kubevirt-functest-opensuse-tumbleweed
     branches:
       - main
     always_run: false
     run_if_changed: "preferences/base/.*|preferences/components/.*|preferences/opensuse/tumbleweed/.*|tests/functests/.*|tests/vendor/.*|tests/go.*"
-    cluster: kubevirt-prow-workloads
+    cluster: prow-workloads
     decorate: true
     decoration_config:
       grace_period: 5m0s
@@ -431,11 +334,13 @@ presubmits:
         - "-c"
         - "make kubevirt-up && make kubevirt-sync && make kubevirt-functest"
         env:
+        - name: GIMME_GO_VERSION
+          value: 1.24.5
         - name: KUBEVIRT_MEMORY_SIZE
           value: 16G
         - name: FUNCTEST_EXTRA_ARGS
           value: '--ginkgo.focus="VirtualMachine using a preference is able to boot a Linux guest with .*OpenSUSE Tumbleweed"'
-        image: quay.io/kubevirtci/golang:v20240829-fb5890c
+        image: quay.io/kubevirtci/golang:v20251218-e7a7fc9
         name: ""
         resources:
           requests:
@@ -449,7 +354,7 @@ presubmits:
       - main
     always_run: false
     run_if_changed: "preferences/base/.*|preferences/components/.*|preferences/opensuse/leap/.*|tests/functests/.*|tests/vendor/.*|tests/go.*"
-    cluster: kubevirt-prow-workloads
+    cluster: prow-workloads
     decorate: true
     decoration_config:
       grace_period: 5m0s
@@ -470,11 +375,13 @@ presubmits:
         - "-c"
         - "make kubevirt-up && make kubevirt-sync && make kubevirt-functest"
         env:
+        - name: GIMME_GO_VERSION
+          value: 1.24.5
         - name: KUBEVIRT_MEMORY_SIZE
           value: 16G
         - name: FUNCTEST_EXTRA_ARGS
           value: '--ginkgo.focus="VirtualMachine using a preference is able to boot a Linux guest with .*OpenSUSE Leap"'
-        image: quay.io/kubevirtci/golang:v20240829-fb5890c
+        image: quay.io/kubevirtci/golang:v20251218-e7a7fc9
         name: ""
         resources:
           requests:
@@ -483,62 +390,12 @@ presubmits:
           privileged: true
       nodeSelector:
         type: bare-metal-external
-  - name: pull-common-instancetypes-kubevirt-functest-opensuse-leap-arm64
-    branches:
-      - main
-    always_run: false
-    run_if_changed: "preferences/base/.*|preferences/components/.*|preferences/opensuse/leap/.*|tests/functests/.*|tests/vendor/.*|tests/go.*"
-    cluster: prow-arm64-workloads
-    decorate: true
-    decoration_config:
-      grace_period: 5m0s
-      timeout: 1h0m0s
-    labels:
-      preset-bazel-unnested: "false"
-      preset-podman-in-container-enabled: "true"
-    max_concurrency: 1
-    optional: true
-    spec:
-      containers:
-      - command:
-        - /usr/local/bin/runner.sh
-        - "/bin/sh"
-        - "-c"
-        - "make kubevirt-up && make kubevirt-sync && make kubevirt-functest"
-        env:
-        - name: KUBEVIRT_PROVIDER
-          value: kind-1.28
-        - name: KUBEVIRT_MEMORY_SIZE
-          value: 16G
-        - name: FUNCTEST_EXTRA_ARGS
-          value: '--ginkgo.focus="VirtualMachine using a preference is able to boot a Linux guest with .*OpenSUSE Leap"'
-        image: quay.io/kubevirtci/golang:v20240829-fb5890c
-        name: ""
-        resources:
-          requests:
-            memory: 20Gi
-        securityContext:
-          privileged: true
-        volumeMounts:
-        - mountPath: /sys/fs/cgroup
-          name: cgroup
-        - mountPath: /var/log/audit
-          name: audit
-      volumes:
-      - hostPath:
-          path: /sys/fs/cgroup
-          type: Directory
-        name: cgroup
-      - hostPath:
-          path: /var/log/audit
-          type: Directory
-        name: audit
   - name: pull-common-instancetypes-kubevirt-functest-validation-os
     branches:
       - main
     always_run: false
-    run_if_changed: "preferences/base/.*|preferences/components/.*|preferences/windows/11/.*|tests/functests/.*|tests/vendor/.*|tests/go.*"
-    cluster: kubevirt-prow-workloads
+    run_if_changed: "preferences/base/.*|preferences/components/.*|preferences/windows/11/.*|tests/functests/.*|tests/vendor/.*|tests/go.*|tests/image/validationos.*"
+    cluster: prow-workloads
     decorate: true
     decoration_config:
       grace_period: 5m0s
@@ -562,17 +419,142 @@ presubmits:
           cat "$QUAY_PASSWORD" | podman login --username $(cat "$QUAY_USER") --password-stdin=true quay.io
           make kubevirt-up && make kubevirt-sync && make kubevirt-sync-containerdisks && make kubevirt-functest
         env:
+        - name: GIMME_GO_VERSION
+          value: 1.24.5
         - name: KUBEVIRT_MEMORY_SIZE
           value: 16G
         - name: FUNCTEST_EXTRA_ARGS
           value: '--ginkgo.focus="VirtualMachine using a preference is able to boot a Windows guest with .*Validation OS"'
-        image: quay.io/kubevirtci/golang:v20240829-fb5890c
+        image: quay.io/kubevirtci/golang:v20251218-e7a7fc9
         name: ""
         resources:
           requests:
             memory: 20Gi
         securityContext:
           privileged: true
+      nodeSelector:
+        type: bare-metal-external
+  - name: pull-common-instancetypes-kubevirt-functest-debian-11
+    branches:
+      - main
+    always_run: false
+    run_if_changed: "preferences/base/.*|preferences/components/.*|preferences/linux/.*|preferences/linux-efi/.*|preferences/debian/.*|tests/functests/.*|tests/vendor/.*|tests/go.*"
+    cluster: prow-workloads
+    decorate: true
+    decoration_config:
+      grace_period: 5m0s
+      timeout: 1h0m0s
+    labels:
+      preset-bazel-cache: "true"
+      preset-bazel-unnested: "true"
+      preset-docker-mirror-proxy: "true"
+      preset-podman-in-container-enabled: "true"
+      preset-podman-shared-images: "true"
+      preset-shared-images: "true"
+    max_concurrency: 1
+    spec:
+      containers:
+        - command:
+            - /usr/local/bin/runner.sh
+            - "/bin/sh"
+            - "-c"
+            - "make kubevirt-up && make kubevirt-sync && make kubevirt-functest"
+          env:
+            - name: GIMME_GO_VERSION
+              value: 1.24.5
+            - name: KUBEVIRT_MEMORY_SIZE
+              value: 16G
+            - name: FUNCTEST_EXTRA_ARGS
+              value: '--ginkgo.focus="VirtualMachine using a preference is able to boot a Linux guest with .*Debian 11"'
+          image: quay.io/kubevirtci/golang:v20251218-e7a7fc9
+          name: ""
+          resources:
+            requests:
+              memory: 20Gi
+          securityContext:
+            privileged: true
+      nodeSelector:
+        type: bare-metal-external
+  - name: pull-common-instancetypes-kubevirt-functest-debian-12
+    branches:
+      - main
+    always_run: false
+    run_if_changed: "preferences/base/.*|preferences/components/.*|preferences/linux/.*|preferences/linux-efi/.*|preferences/debian/.*|tests/functests/.*|tests/vendor/.*|tests/go.*"
+    cluster: prow-workloads
+    decorate: true
+    decoration_config:
+      grace_period: 5m0s
+      timeout: 1h0m0s
+    labels:
+      preset-bazel-cache: "true"
+      preset-bazel-unnested: "true"
+      preset-docker-mirror-proxy: "true"
+      preset-podman-in-container-enabled: "true"
+      preset-podman-shared-images: "true"
+      preset-shared-images: "true"
+    max_concurrency: 1
+    spec:
+      containers:
+        - command:
+            - /usr/local/bin/runner.sh
+            - "/bin/sh"
+            - "-c"
+            - "make kubevirt-up && make kubevirt-sync && make kubevirt-functest"
+          env:
+            - name: GIMME_GO_VERSION
+              value: 1.24.5
+            - name: KUBEVIRT_MEMORY_SIZE
+              value: 16G
+            - name: FUNCTEST_EXTRA_ARGS
+              value: '--ginkgo.focus="VirtualMachine using a preference is able to boot a Linux guest with .*Debian 12"'
+          image: quay.io/kubevirtci/golang:v20251218-e7a7fc9
+          name: ""
+          resources:
+            requests:
+              memory: 20Gi
+          securityContext:
+            privileged: true
+      nodeSelector:
+        type: bare-metal-external
+  - name: pull-common-instancetypes-kubevirt-functest-debian-13
+    branches:
+      - main
+    always_run: false
+    run_if_changed: "preferences/base/.*|preferences/components/.*|preferences/linux/.*|preferences/linux-efi/.*|preferences/debian/.*|tests/functests/.*|tests/vendor/.*|tests/go.*"
+    cluster: prow-workloads
+    decorate: true
+    decoration_config:
+      grace_period: 5m0s
+      timeout: 1h0m0s
+    labels:
+      preset-bazel-cache: "true"
+      preset-bazel-unnested: "true"
+      preset-docker-mirror-proxy: "true"
+      preset-podman-in-container-enabled: "true"
+      preset-podman-shared-images: "true"
+      preset-shared-images: "true"
+    max_concurrency: 1
+    spec:
+      containers:
+        - command:
+            - /usr/local/bin/runner.sh
+            - "/bin/sh"
+            - "-c"
+            - "make kubevirt-up && make kubevirt-sync && make kubevirt-functest"
+          env:
+            - name: GIMME_GO_VERSION
+              value: 1.24.5
+            - name: KUBEVIRT_MEMORY_SIZE
+              value: 16G
+            - name: FUNCTEST_EXTRA_ARGS
+              value: '--ginkgo.focus="VirtualMachine using a preference is able to boot a Linux guest with .*Debian 13"'
+          image: quay.io/kubevirtci/golang:v20251218-e7a7fc9
+          name: ""
+          resources:
+            requests:
+              memory: 20Gi
+          securityContext:
+            privileged: true
       nodeSelector:
         type: bare-metal-external
   - name: pull-build-common-instancetypes-builder
@@ -589,12 +571,12 @@ presubmits:
       preset-docker-mirror: "true"
     annotations:
       testgrid-create-test-group: "false"
-    cluster: kubevirt-prow-workloads
+    cluster: prow-workloads
     spec:
       nodeSelector:
         type: bare-metal-external
       containers:
-        - image: quay.io/kubevirtci/golang:v20240829-fb5890c
+        - image: quay.io/kubevirtci/golang:v20251218-e7a7fc9
           env:
             - name: COMMON_INSTANCETYPES_CRI
               value: podman
@@ -608,3 +590,91 @@ presubmits:
           resources:
             requests:
               memory: "8Gi"
+  - name: pull-common-instancetypes-kubevirt-functest-oraclelinux-8
+    branches:
+      - main
+    always_run: false
+    run_if_changed: "preferences/base/.*|preferences/components/.*|preferences/linux/.*|preferences/linux-efi/.*|preferences/oraclelinux/.*|tests/functests/.*|tests/vendor/.*|tests/go.*"
+    cluster: prow-workloads
+    decorate: true
+    decoration_config:
+      grace_period: 5m0s
+      timeout: 1h0m0s
+    labels:
+      preset-bazel-cache: "true"
+      preset-bazel-unnested: "true"
+      preset-docker-mirror-proxy: "true"
+      preset-podman-in-container-enabled: "true"
+      preset-podman-shared-images: "true"
+      preset-shared-images: "true"
+      preset-kubevirtci-quay-credential: "true"
+    max_concurrency: 1
+    spec:
+      containers:
+        - command:
+            - /usr/local/bin/runner.sh
+            - "/bin/sh"
+            - "-c"
+            - |
+              cat "$QUAY_PASSWORD" | podman login --username $(cat "$QUAY_USER") --password-stdin=true quay.io
+              make kubevirt-up && make kubevirt-sync && make kubevirt-sync-containerdisks && make kubevirt-functest
+          env:
+            - name: GIMME_GO_VERSION
+              value: 1.24.5
+            - name: KUBEVIRT_MEMORY_SIZE
+              value: 16G
+            - name: FUNCTEST_EXTRA_ARGS
+              value: '--ginkgo.focus="VirtualMachine using a preference is able to boot a Linux guest with .*Oracle Linux 8"'
+          image: quay.io/kubevirtci/golang:v20251218-e7a7fc9
+          name: ""
+          resources:
+            requests:
+              memory: 20Gi
+          securityContext:
+            privileged: true
+      nodeSelector:
+        type: bare-metal-external
+  - name: pull-common-instancetypes-kubevirt-functest-oraclelinux-9
+    branches:
+      - main
+    always_run: false
+    run_if_changed: "preferences/base/.*|preferences/components/.*|preferences/linux/.*|preferences/linux-efi/.*|preferences/oraclelinux/.*|tests/functests/.*|tests/vendor/.*|tests/go.*"
+    cluster: prow-workloads
+    decorate: true
+    decoration_config:
+      grace_period: 5m0s
+      timeout: 1h0m0s
+    labels:
+      preset-bazel-cache: "true"
+      preset-bazel-unnested: "true"
+      preset-docker-mirror-proxy: "true"
+      preset-podman-in-container-enabled: "true"
+      preset-podman-shared-images: "true"
+      preset-shared-images: "true"
+      preset-kubevirtci-quay-credential: "true"
+    max_concurrency: 1
+    spec:
+      containers:
+        - command:
+            - /usr/local/bin/runner.sh
+            - "/bin/sh"
+            - "-c"
+            - |
+              cat "$QUAY_PASSWORD" | podman login --username $(cat "$QUAY_USER") --password-stdin=true quay.io
+              make kubevirt-up && make kubevirt-sync && make kubevirt-sync-containerdisks && make kubevirt-functest
+          env:
+            - name: GIMME_GO_VERSION
+              value: 1.24.5
+            - name: KUBEVIRT_MEMORY_SIZE
+              value: 16G
+            - name: FUNCTEST_EXTRA_ARGS
+              value: '--ginkgo.focus="VirtualMachine using a preference is able to boot a Linux guest with .*Oracle Linux 9"'
+          image: quay.io/kubevirtci/golang:v20251218-e7a7fc9
+          name: ""
+          resources:
+            requests:
+              memory: 20Gi
+          securityContext:
+            privileged: true
+      nodeSelector:
+        type: bare-metal-external

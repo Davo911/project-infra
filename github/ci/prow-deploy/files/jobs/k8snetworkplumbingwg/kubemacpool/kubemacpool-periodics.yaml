@@ -7,12 +7,12 @@ periodics:
       testgrid-create-test-group: "false"
     spec:
       containers:
-        - image: quay.io/kubevirtci/flakefinder:v20230112-ec14f598
+        - image: quay.io/kubevirtci/flakefinder:v20260210-878d8f0
           env:
             - name: GOOGLE_APPLICATION_CREDENTIALS
               value: /etc/gcs/service-account.json
           command:
-            - "/app/robots/cmd/flakefinder/app.binary"
+          - /usr/bin/flakefinder
           args:
             - --dry-run=false
             - --token=/etc/github/oauth
@@ -21,6 +21,7 @@ periodics:
             - --org=k8snetworkplumbingwg
             - --repo=kubemacpool
             - --skip_results_before_start_of_report=false
+            - --pr_base_branch=main
           volumeMounts:
             - name: token
               mountPath: /etc/github
@@ -42,12 +43,12 @@ periodics:
     decorate: true
     spec:
       containers:
-        - image: quay.io/kubevirtci/flakefinder:v20230112-ec14f598
+        - image: quay.io/kubevirtci/flakefinder:v20260210-878d8f0
           env:
             - name: GOOGLE_APPLICATION_CREDENTIALS
               value: /etc/gcs/service-account.json
           command:
-            - "/app/robots/cmd/flakefinder/app.binary"
+          - /usr/bin/flakefinder
           args:
             - --dry-run=false
             - --token=/etc/github/oauth
@@ -56,6 +57,7 @@ periodics:
             - --org=k8snetworkplumbingwg
             - --repo=kubemacpool
             - --skip_results_before_start_of_report=false
+            - --pr_base_branch=main
           volumeMounts:
             - name: token
               mountPath: /etc/github
@@ -77,12 +79,12 @@ periodics:
     cluster: kubevirt-prow-control-plane
     spec:
       containers:
-        - image: quay.io/kubevirtci/flakefinder:v20230112-ec14f598
+        - image: quay.io/kubevirtci/flakefinder:v20260210-878d8f0
           env:
             - name: GOOGLE_APPLICATION_CREDENTIALS
               value: /etc/gcs/service-account.json
           command:
-            - "/app/robots/cmd/flakefinder/app.binary"
+          - /usr/bin/flakefinder
           args:
             - --dry-run=false
             - --token=/etc/github/oauth
@@ -91,6 +93,7 @@ periodics:
             - --org=k8snetworkplumbingwg
             - --repo=kubemacpool
             - --skip_results_before_start_of_report=false
+            - --pr_base_branch=main
           volumeMounts:
             - name: token
               mountPath: /etc/github

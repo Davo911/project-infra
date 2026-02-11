@@ -20,8 +20,8 @@ presubmits:
         - make test
         env:
         - name: GIMME_GO_VERSION
-          value: "1.22.6"
-        image: quay.io/kubevirtci/golang:v20240829-fb5890c
+          value: "1.24.1"
+        image: quay.io/kubevirtci/golang:v20251218-e7a7fc9
         name: ""
         resources:
           requests:
@@ -43,11 +43,11 @@ presubmits:
         - /usr/local/bin/runner.sh
         - /bin/sh
         - -c
-        - ./build.sh -b
+        - make medius
         env:
         - name: GIMME_GO_VERSION
-          value: "1.22.6"
-        image: quay.io/kubevirtci/golang:v20240829-fb5890c
+          value: "1.24.1"
+        image: quay.io/kubevirtci/golang:v20251218-e7a7fc9
         name: ""
         resources:
           requests:
@@ -56,7 +56,7 @@ presubmits:
     optional: false
     annotations:
       testgrid-create-test-group: "false"
-    cluster: kubevirt-prow-workloads
+    cluster: prow-workloads
     decorate: true
     decoration_config:
       grace_period: 5m0s
@@ -65,7 +65,7 @@ presubmits:
       preset-podman-in-container-enabled: "true"
       preset-docker-mirror-proxy: "true"
     max_concurrency: 11
-    name: pull-containerdisks-pipeline-cirros
+    name: pull-containerdisks-pipeline-centos-stream-9
     spec:
       containers:
       - command:
@@ -75,10 +75,10 @@ presubmits:
         - ./pipeline.sh
         env:
         - name: GIMME_GO_VERSION
-          value: "1.22.6"
+          value: "1.24.1"
         - name: FOCUS
-          value: "cirros:*"
-        image: quay.io/kubevirtci/golang:v20240829-fb5890c
+          value: "centos-stream:9"
+        image: quay.io/kubevirtci/golang:v20251218-e7a7fc9
         name: ""
         resources:
           requests:
@@ -87,11 +87,79 @@ presubmits:
           privileged: true
       nodeSelector:
         type: bare-metal-external
+  - always_run: true
+    annotations:
+      testgrid-create-test-group: "false"
+    cluster: prow-s390x-workloads
+    decorate: true
+    decoration_config:
+      grace_period: 5m0s
+      timeout: 1h0m0s
+    labels:
+      preset-podman-in-container-enabled: "true"
+    max_concurrency: 3
+    name: pull-containerdisks-pipeline-centos-stream-9-s390x
+    spec:
+      containers:
+      - command:
+        - /usr/local/bin/runner.sh
+        - /bin/sh
+        - -c
+        - ./pipeline.sh
+        env:
+        - name: GIMME_GO_VERSION
+          value: "1.24.1"
+        - name: FOCUS
+          value: "centos-stream:9"
+        - name: KUBEVIRT_NESTED_VIRTUALIZATION_REQUIRED
+          value: "true"
+        image: quay.io/kubevirtci/golang:v20251218-e7a7fc9
+        name: ""
+        resources:
+          requests:
+            memory: 12Gi
+        securityContext:
+          privileged: true
+  - always_run: false
+    run_if_changed: "artifacts/debian/.*"
+    annotations:
+      testgrid-create-test-group: "false"
+    cluster: prow-workloads
+    decorate: true
+    decoration_config:
+      grace_period: 5m0s
+      timeout: 1h0m0s
+    labels:
+      preset-podman-in-container-enabled: "true"
+      preset-docker-mirror-proxy: "true"
+    max_concurrency: 11
+    name: pull-containerdisks-pipeline-debian
+    spec:
+      containers:
+        - command:
+            - /usr/local/bin/runner.sh
+            - /bin/sh
+            - -c
+            - ./pipeline.sh
+          env:
+            - name: GIMME_GO_VERSION
+              value: "1.24.1"
+            - name: FOCUS
+              value: "debian:*"
+          image: quay.io/kubevirtci/golang:v20251218-e7a7fc9
+          name: ""
+          resources:
+            requests:
+              memory: 12Gi
+          securityContext:
+            privileged: true
+      nodeSelector:
+        type: bare-metal-external
   - always_run: false
     run_if_changed: "artifacts/centosstream/.*"
     annotations:
       testgrid-create-test-group: "false"
-    cluster: kubevirt-prow-workloads
+    cluster: prow-workloads
     decorate: true
     decoration_config:
       grace_period: 5m0s
@@ -110,10 +178,10 @@ presubmits:
         - ./pipeline.sh
         env:
         - name: GIMME_GO_VERSION
-          value: "1.22.6"
+          value: "1.24.1"
         - name: FOCUS
           value: "centos-stream:*"
-        image: quay.io/kubevirtci/golang:v20240829-fb5890c
+        image: quay.io/kubevirtci/golang:v20251218-e7a7fc9
         name: ""
         resources:
           requests:
@@ -123,10 +191,44 @@ presubmits:
       nodeSelector:
         type: bare-metal-external
   - always_run: false
+    run_if_changed: "artifacts/centosstream/.*"
+    annotations:
+      testgrid-create-test-group: "false"
+    cluster: prow-s390x-workloads
+    decorate: true
+    decoration_config:
+      grace_period: 5m0s
+      timeout: 1h0m0s
+    labels:
+      preset-podman-in-container-enabled: "true"
+    max_concurrency: 3
+    name: pull-containerdisks-pipeline-centosstream-s390x
+    spec:
+      containers:
+      - command:
+        - /usr/local/bin/runner.sh
+        - /bin/sh
+        - -c
+        - ./pipeline.sh
+        env:
+        - name: GIMME_GO_VERSION
+          value: "1.24.1"
+        - name: FOCUS
+          value: "centos-stream:*"
+        - name: KUBEVIRT_NESTED_VIRTUALIZATION_REQUIRED
+          value: "true"
+        image: quay.io/kubevirtci/golang:v20251218-e7a7fc9
+        name: ""
+        resources:
+          requests:
+            memory: 12Gi
+        securityContext:
+          privileged: true
+  - always_run: false
     run_if_changed: "artifacts/fedora/.*"
     annotations:
       testgrid-create-test-group: "false"
-    cluster: kubevirt-prow-workloads
+    cluster: prow-workloads
     decorate: true
     decoration_config:
       grace_period: 5m0s
@@ -145,10 +247,10 @@ presubmits:
         - ./pipeline.sh
         env:
         - name: GIMME_GO_VERSION
-          value: "1.22.6"
+          value: "1.24.1"
         - name: FOCUS
           value: "fedora:*"
-        image: quay.io/kubevirtci/golang:v20240829-fb5890c
+        image: quay.io/kubevirtci/golang:v20251218-e7a7fc9
         name: ""
         resources:
           requests:
@@ -158,10 +260,44 @@ presubmits:
       nodeSelector:
         type: bare-metal-external
   - always_run: false
+    run_if_changed: "artifacts/fedora/.*"
+    annotations:
+      testgrid-create-test-group: "false"
+    cluster: prow-s390x-workloads
+    decorate: true
+    decoration_config:
+      grace_period: 5m0s
+      timeout: 1h0m0s
+    labels:
+      preset-podman-in-container-enabled: "true"
+    max_concurrency: 3
+    name: pull-containerdisks-pipeline-fedora-s390x
+    spec:
+      containers:
+      - command:
+        - /usr/local/bin/runner.sh
+        - /bin/sh
+        - -c
+        - ./pipeline.sh
+        env:
+        - name: GIMME_GO_VERSION
+          value: "1.24.1"
+        - name: FOCUS
+          value: "fedora:*"
+        - name: KUBEVIRT_NESTED_VIRTUALIZATION_REQUIRED
+          value: "true"
+        image: quay.io/kubevirtci/golang:v20251218-e7a7fc9
+        name: ""
+        resources:
+          requests:
+            memory: 12Gi
+        securityContext:
+          privileged: true
+  - always_run: false
     run_if_changed: "artifacts/ubuntu/.*"
     annotations:
       testgrid-create-test-group: "false"
-    cluster: kubevirt-prow-workloads
+    cluster: prow-workloads
     decorate: true
     decoration_config:
       grace_period: 5m0s
@@ -180,10 +316,10 @@ presubmits:
         - ./pipeline.sh
         env:
         - name: GIMME_GO_VERSION
-          value: "1.22.6"
+          value: "1.24.1"
         - name: FOCUS
           value: "ubuntu:*"
-        image: quay.io/kubevirtci/golang:v20240829-fb5890c
+        image: quay.io/kubevirtci/golang:v20251218-e7a7fc9
         name: ""
         resources:
           requests:
@@ -193,10 +329,44 @@ presubmits:
       nodeSelector:
         type: bare-metal-external
   - always_run: false
+    run_if_changed: "artifacts/ubuntu/.*"
+    annotations:
+      testgrid-create-test-group: "false"
+    cluster: prow-s390x-workloads
+    decorate: true
+    decoration_config:
+      grace_period: 5m0s
+      timeout: 1h0m0s
+    labels:
+      preset-podman-in-container-enabled: "true"
+    max_concurrency: 3
+    name: pull-containerdisks-pipeline-ubuntu-s390x
+    spec:
+      containers:
+      - command:
+        - /usr/local/bin/runner.sh
+        - /bin/sh
+        - -c
+        - ./pipeline.sh
+        env:
+        - name: GIMME_GO_VERSION
+          value: "1.24.1"
+        - name: FOCUS
+          value: "ubuntu:*"
+        - name: KUBEVIRT_NESTED_VIRTUALIZATION_REQUIRED
+          value: "true"
+        image: quay.io/kubevirtci/golang:v20251218-e7a7fc9
+        name: ""
+        resources:
+          requests:
+            memory: 12Gi
+        securityContext:
+          privileged: true
+  - always_run: false
     run_if_changed: "artifacts/opensuse/tumbleweed/.*"
     annotations:
       testgrid-create-test-group: "false"
-    cluster: kubevirt-prow-workloads
+    cluster: prow-workloads
     decorate: true
     decoration_config:
       grace_period: 5m0s
@@ -215,10 +385,10 @@ presubmits:
         - ./pipeline.sh
         env:
         - name: GIMME_GO_VERSION
-          value: "1.22.6"
+          value: "1.24.1"
         - name: FOCUS
           value: "opensuse-tumbleweed:*"
-        image: quay.io/kubevirtci/golang:v20240829-fb5890c
+        image: quay.io/kubevirtci/golang:v20251218-e7a7fc9
         name: ""
         resources:
           requests:
@@ -228,10 +398,44 @@ presubmits:
       nodeSelector:
         type: bare-metal-external
   - always_run: false
+    run_if_changed: "artifacts/opensuse/tumbleweed/.*"
+    annotations:
+      testgrid-create-test-group: "false"
+    cluster: prow-s390x-workloads
+    decorate: true
+    decoration_config:
+      grace_period: 5m0s
+      timeout: 1h0m0s
+    labels:
+      preset-podman-in-container-enabled: "true"
+    max_concurrency: 3
+    name: pull-containerdisks-pipeline-opensuse-tumbleweed-s390x
+    spec:
+      containers:
+      - command:
+        - /usr/local/bin/runner.sh
+        - /bin/sh
+        - -c
+        - ./pipeline.sh
+        env:
+        - name: GIMME_GO_VERSION
+          value: "1.24.1"
+        - name: FOCUS
+          value: "opensuse-tumbleweed:*"
+        - name: KUBEVIRT_NESTED_VIRTUALIZATION_REQUIRED
+          value: "true"
+        image: quay.io/kubevirtci/golang:v20251218-e7a7fc9
+        name: ""
+        resources:
+          requests:
+            memory: 12Gi
+        securityContext:
+          privileged: true
+  - always_run: false
     run_if_changed: "artifacts/opensuse/leap/.*"
     annotations:
       testgrid-create-test-group: "false"
-    cluster: kubevirt-prow-workloads
+    cluster: prow-workloads
     decorate: true
     decoration_config:
       grace_period: 5m0s
@@ -250,10 +454,10 @@ presubmits:
         - ./pipeline.sh
         env:
         - name: GIMME_GO_VERSION
-          value: "1.22.6"
+          value: "1.24.1"
         - name: FOCUS
           value: "opensuse-leap:*"
-        image: quay.io/kubevirtci/golang:v20240829-fb5890c
+        image: quay.io/kubevirtci/golang:v20251218-e7a7fc9
         name: ""
         resources:
           requests:

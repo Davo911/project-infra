@@ -6,10 +6,12 @@ postsubmits:
     - ^v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$
     cluster: kubevirt-prow-control-plane
     always_run: true
-    optional: false
     skip_report: false
     annotations:
-      testgrid-create-test-group: "false"
+      testgrid-dashboards: kubevirt-postsubmits
+      testgrid-days-of-results: "90"
+      testgrid-alert-email: push-release-kubevirt-tag@redhat.com
+      testgrid-num-failures-to-alert: "1"
     decorate: true
     decoration_config:
       timeout: 3h
@@ -23,7 +25,7 @@ postsubmits:
       preset-pgp-bot-key: "true"
     spec:
       containers:
-      - image: quay.io/kubevirtci/golang:v20240829-fb5890c
+      - image: quay.io/kubevirtci/golang:v20251218-e7a7fc9
         env:
         - name: DOCKER_PREFIX
           value: quay.io/kubevirt
@@ -69,7 +71,7 @@ postsubmits:
       preset-gcs-credentials: "true"
     spec:
       containers:
-      - image: quay.io/kubevirtci/bootstrap:v20240829-fb5890c
+      - image: quay.io/kubevirtci/bootstrap:v20251218-e7a7fc9
         command: [ "/usr/local/bin/runner.sh", "/bin/sh", "-c" ]
         args:
         - |
@@ -90,9 +92,8 @@ postsubmits:
   - name: push-kubevirt-main
     branches:
     - main
-    cluster: kubevirt-prow-control-plane
+    cluster: prow-workloads
     always_run: true
-    optional: false
     skip_report: false
     annotations:
       testgrid-create-test-group: "false"
@@ -108,7 +109,7 @@ postsubmits:
       preset-kubevirtci-quay-credential: "true"
     spec:
       containers:
-      - image: quay.io/kubevirtci/golang:v20240829-fb5890c
+      - image: quay.io/kubevirtci/golang:v20251218-e7a7fc9
         env:
         - name: DOCKER_PREFIX
           value: quay.io/kubevirt
@@ -131,8 +132,7 @@ postsubmits:
     annotations:
       testgrid-create-test-group: "false"
     always_run: true
-    optional: false
-    skip_reporting: true
+    skip_report: true
     decorate: true
     decoration_config:
       timeout: 1h
@@ -143,7 +143,7 @@ postsubmits:
       preset-bazel-cache: "true"
     spec:
       containers:
-        - image: quay.io/kubevirtci/bootstrap:v20240829-fb5890c
+        - image: quay.io/kubevirtci/bootstrap:v20251218-e7a7fc9
           env:
             - name: COVERALLS_TOKEN_FILE
               value: /root/.docker/secrets/coveralls/token
@@ -156,7 +156,7 @@ postsubmits:
             privileged: true
           resources:
             requests:
-              memory: "8Gi"
+              memory: "16Gi"
           volumeMounts:
             - name: kubevirtci-coveralls
               mountPath: /root/.docker/secrets/coveralls
@@ -180,12 +180,9 @@ postsubmits:
       preset-podman-in-container-enabled: "true"
       preset-docker-mirror-proxy: "true"
       preset-bazel-cache: "true"
-    reporter_config:
-      slack:
-        job_states_to_report: []
     spec:
       containers:
-        - image: quay.io/kubevirtci/bootstrap:v20240829-fb5890c
+        - image: quay.io/kubevirtci/bootstrap:v20251218-e7a7fc9
           env:
             - name: FOSSA_TOKEN_FILE
               value: /root/.docker/secrets/fossa/token
@@ -198,7 +195,7 @@ postsubmits:
             privileged: true
           resources:
             requests:
-              memory: "4Gi"
+              memory: "16Gi"
           volumeMounts:
             - name: kubevirtci-fossa
               mountPath: /root/.docker/secrets/fossa
@@ -213,6 +210,9 @@ postsubmits:
     branches:
       - main
     decorate: true
+    decoration_config:
+      timeout: 4h
+      grace_period: 5m
     max_concurrency: 1
     labels:
       preset-podman-in-container-enabled: "true"
@@ -222,15 +222,12 @@ postsubmits:
       preset-kubevirtci-quay-credential: "true"
     annotations:
       testgrid-create-test-group: "false"
-    reporter_config:
-      slack:
-        job_states_to_report: []
-    cluster: kubevirt-prow-workloads
+    cluster: prow-workloads
     spec:
       nodeSelector:
         type: bare-metal-external
       containers:
-        - image: quay.io/kubevirtci/bootstrap:v20240829-fb5890c
+        - image: quay.io/kubevirtci/bootstrap:v20251218-e7a7fc9
           command:
             - "/usr/local/bin/runner.sh"
             - "/bin/bash"
@@ -242,14 +239,13 @@ postsubmits:
             privileged: true
           resources:
             requests:
-              memory: "8Gi"
+              memory: "16Gi"
   - name: push-kubevirt-update-support-matrix
     branches:
     # regex for semver from https://semver.org/#is-there-a-suggested-regular-expression-regex-to-check-a-semver-string
     - ^v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$
     cluster: kubevirt-prow-control-plane
     always_run: true
-    optional: false
     skip_report: false
     annotations:
       testgrid-create-test-group: "false"
@@ -261,6 +257,7 @@ postsubmits:
     - org: kubevirt
       repo: project-infra
       base_ref: main
+      workdir: true
     - org: kubevirt
       repo: sig-release
       base_ref: main
@@ -268,14 +265,26 @@ postsubmits:
       preset-github-credentials: "true"
     spec:
       containers:
-      - image: quay.io/kubevirtci/pr-creator:v20240305-cb764ec
-        env:
-        command: [ "/bin/sh", "-ce" ]
-        args:
+      - args:
         - |
           project_infra_dir=$(cd ../project-infra && pwd)
           sig_release_dir=$(cd ../sig-release && pwd)
-          git-pr.sh -c "cd ../project-infra && bazelisk run //robots/cmd/kubevirt -- get support-matrix --output-file=${sig_release_dir}/releases/k8s-support-matrix.md --overwrite-output-file --job-config-path=${project_infra_dir}/github/ci/prow-deploy/files/jobs/kubevirt/kubevirt" -p ${sig_release_dir} -s 'Automated run of //robots/cmd/kubevirt get support-matrix' -r sig-release -b update-support-matrix -T main
+          go run ./robots/kubevirt get support-matrix \
+            --output-file=/tmp/k8s-support-matrix.md \
+            --job-config-path=${project_infra_dir}/github/ci/prow-deploy/files/jobs/kubevirt/kubevirt \
+            --overwrite-output-file
+          git-pr.sh \
+            -c "mv /tmp/k8s-support-matrix.md ${sig_release_dir}/releases/k8s-support-matrix.md" \
+            -p ${sig_release_dir} \
+            -s 'Automated run of //robots/kubevirt get support-matrix' \
+            -r sig-release \
+            -b update-support-matrix \
+            -T main
+        command:
+        - /usr/local/bin/runner.sh
+        - /bin/bash
+        - -ce
+        image: quay.io/kubevirtci/pr-creator:v20260128-84f963a
         resources:
           requests:
             memory: "200Mi"

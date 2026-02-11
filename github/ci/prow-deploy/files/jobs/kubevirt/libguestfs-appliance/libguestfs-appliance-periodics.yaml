@@ -1,7 +1,5 @@
 periodics:
 - name: periodic-libguestfs-appliance-push-weekly-build-main
-  branches:
-    - main
   # Run once a week at 2AM on Saturday morning
   cron: "0 2 * * 6"
   annotations:
@@ -21,11 +19,10 @@ periodics:
    - org: kubevirt
      repo: libguestfs-appliance
      base_ref: main
-     work_dir: true
   cluster: kubevirt-prow-control-plane
   spec:
     containers:
-    - image: quay.io/kubevirtci/bootstrap:v20240829-fb5890c
+    - image: quay.io/kubevirtci/bootstrap:v20251218-e7a7fc9
       command:
         - "/usr/local/bin/runner.sh"
         - "/bin/sh"
@@ -35,8 +32,10 @@ periodics:
           url=https://storage.googleapis.com/kubevirt-prow/devel/release/kubevirt/libguestfs-appliance
           bucket_dir="kubevirt-prow/devel/release/kubevirt/libguestfs-appliance"
           ./create-libguestfs-appliance.sh
-          curl --output /dev/null --silent --head --fail $url/$(cat ./output/latest-version.txt) || gsutil cp ./output/libguestfs-appliance-*.tar.xz gs://$bucket_dir/
-          gsutil cp ./output/latest-version.txt gs://$bucket_dir/
+          curl --output /dev/null --silent --head --fail $url/$(cat ./output/latest-version-amd64.txt) || gsutil cp ./output/libguestfs-appliance-*amd64.tar.xz gs://$bucket_dir/
+          gsutil cp ./output/latest-version-amd64.txt gs://$bucket_dir/
+          curl --output /dev/null --silent --head --fail $url/$(cat ./output/latest-version-s390x.txt) || gsutil cp ./output/libguestfs-appliance-*s390x.tar.xz gs://$bucket_dir/
+          gsutil cp ./output/latest-version-s390x.txt gs://$bucket_dir/
       # docker-in-docker needs privileged mode
       securityContext:
         privileged: true

@@ -5,7 +5,7 @@ presubmits:
     optional: true
     decorate: true
     skip_report: false
-    cluster: kubevirt-prow-workloads
+    cluster: prow-workloads
     decoration_config:
       grace_period: 5m0s
       timeout: 1h0m0s
@@ -22,7 +22,7 @@ presubmits:
         - /bin/sh
         - -c
         - automation/test.sh
-        image: quay.io/kubevirtci/golang:v20240829-fb5890c
+        image: quay.io/kubevirtci/golang:v20251218-e7a7fc9
         name: ""
         resources:
           requests:
@@ -45,7 +45,7 @@ presubmits:
     always_run: true
     optional: false
     skip_report: false
-    cluster: kubevirt-prow-workloads
+    cluster: prow-workloads
     decorate: true
     decoration_config:
       timeout: 10m
@@ -59,7 +59,7 @@ presubmits:
       nodeSelector:
         type: bare-metal-external
       containers:
-        - image: quay.io/kubevirtci/bootstrap:v20240829-fb5890c
+        - image: quay.io/kubevirtci/bootstrap:v20251218-e7a7fc9
           command:
             - "/usr/local/bin/runner.sh"
             - "/bin/sh"

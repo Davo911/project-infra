@@ -6,12 +6,15 @@
 
 approvers:
 - davidvossel
-- mfranczy
+- nunnatsa
+- orenc1
 - qinqon
 - rmohr
 options: {}
 reviewers:
 - davidvossel
 - mfranczy
+- nunnatsa
+- orenc1
 - qinqon
 - rmohr

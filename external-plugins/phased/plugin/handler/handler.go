@@ -3,17 +3,20 @@ package handler
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"os"
 	"os/exec"
 
+	pi_github "kubevirt.io/project-infra/pkg/github"
+	kubeVirtLabels "kubevirt.io/project-infra/pkg/github/labels"
+
 	"github.com/sirupsen/logrus"
-	"k8s.io/test-infra/prow/config"
-	gitv2 "k8s.io/test-infra/prow/git/v2"
-	"k8s.io/test-infra/prow/github"
-	"k8s.io/test-infra/prow/labels"
-	"k8s.io/test-infra/prow/pjutil"
+	"sigs.k8s.io/prow/pkg/config"
+	gitv2 "sigs.k8s.io/prow/pkg/git/v2"
+	"sigs.k8s.io/prow/pkg/github"
+	"sigs.k8s.io/prow/pkg/labels"
+	"sigs.k8s.io/prow/pkg/pjutil"
 )
 
 var log *logrus.Logger
@@ -101,7 +104,7 @@ func (h *GitHubEventsHandler) handlePullRequestEvent(log *logrus.Entry, event *g
 		return
 	}
 
-	org, repo, err := gitv2.OrgRepo(event.Repo.FullName)
+	org, repo, err := pi_github.OrgRepo(event.Repo.FullName)
 	if err != nil {
 		log.WithError(err).Errorf("Could not get org/repo from the event")
 		return
@@ -152,7 +155,7 @@ func (h *GitHubEventsHandler) loadPresubmits(pr github.PullRequest) ([]config.Pr
 		return nil, err
 	}
 
-	org, repo, err := gitv2.OrgRepo(pr.Base.Repo.FullName)
+	org, repo, err := pi_github.OrgRepo(pr.Base.Repo.FullName)
 	if err != nil {
 		log.WithError(err).Errorf("Could not parse repo name: %s", pr.Base.Repo.FullName)
 		return nil, err
@@ -164,9 +167,7 @@ func (h *GitHubEventsHandler) loadPresubmits(pr github.PullRequest) ([]config.Pr
 		if index != orgRepo {
 			continue
 		}
-		for _, job := range jobs {
-			presubmits = append(presubmits, job)
-		}
+		presubmits = append(presubmits, jobs...)
 	}
 
 	return presubmits, nil
@@ -189,7 +190,8 @@ func (h *GitHubEventsHandler) shouldRunPhase2(org, repo, eventLabel string, prNu
 	}
 
 	return (eventLabel == labels.LGTM && github.HasLabel(labels.Approved, l)) ||
-		(eventLabel == labels.Approved && github.HasLabel(labels.LGTM, l)), nil
+		(eventLabel == labels.Approved && github.HasLabel(labels.LGTM, l)) ||
+		(eventLabel == kubeVirtLabels.SkipReview), nil
 }
 
 func catFile(log *logrus.Logger, gitDir, file, refspec string) ([]byte, int) {
@@ -200,7 +202,7 @@ func catFile(log *logrus.Logger, gitDir, file, refspec string) ([]byte, int) {
 }
 
 func writeTempFile(log *logrus.Logger, basedir string, content []byte) (string, error) {
-	tmpfile, err := ioutil.TempFile(basedir, "job-config")
+	tmpfile, err := os.CreateTemp(basedir, "job-config")
 	if err != nil {
 		log.WithError(err).Errorf("Could not create temp file for job config.")
 		return "", err
@@ -226,7 +228,7 @@ func fetchRemoteFile(url string) ([]byte, error) {
 		return nil, fmt.Errorf("HTTP request failed with status: %v", resp.Status)
 	}
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}
@@ -245,7 +247,7 @@ func listRequiredManual(ghClient githubClientInterface, pr github.PullRequest, p
 
 	org, repo, number, branch := pr.Base.Repo.Owner.Login, pr.Base.Repo.Name, pr.Number, pr.Base.Ref
 	changes := config.NewGitHubDeferredChangedFilesProvider(ghClient, org, repo, number)
-	toTest, err := pjutil.FilterPresubmits(manualRequiredFilter, changes, branch, presubmits, log)
+	toTest, err := pjutil.FilterPresubmits(defaultManualRequiredFilter, changes, branch, presubmits, log)
 	if err != nil {
 		return nil, err
 	}
@@ -253,14 +255,20 @@ func listRequiredManual(ghClient githubClientInterface, pr github.PullRequest, p
 	return toTest, nil
 }
 
-func manualRequiredFilter(p config.Presubmit) (bool, bool, bool) {
+var defaultManualRequiredFilter = manualRequiredFilter{}
+
+type manualRequiredFilter struct{}
+
+func (f manualRequiredFilter) ShouldRun(p config.Presubmit) (shouldRun bool, forcedToRun bool, defaultBehavior bool) {
 	cond := !p.Optional && !p.AlwaysRun && p.RegexpChangeMatcher.RunIfChanged == "" &&
 		p.RegexpChangeMatcher.SkipIfOnlyChanged == ""
 	return cond, cond, false
 }
 
+func (f manualRequiredFilter) Name() string { return "manualRequiredFilter" }
+
 func testRequested(ghClient githubClientInterface, pr github.PullRequest, requestedJobs []config.Presubmit) error {
-	org, repo, err := gitv2.OrgRepo(pr.Base.Repo.FullName)
+	org, repo, err := pi_github.OrgRepo(pr.Base.Repo.FullName)
 	if err != nil {
 		log.WithError(err).Errorf("Could not parse repo name: %s", pr.Base.Repo.FullName)
 		return err
@@ -329,14 +337,14 @@ func loadConfigBytes(h *GitHubEventsHandler, org, repo string) ([]byte, []byte, 
 }
 
 func (h *GitHubEventsHandler) loadProwConfig(prFullName string) (*config.Config, error) {
-	tmpdir, err := ioutil.TempDir("", "prow-configs")
+	tmpdir, err := os.MkdirTemp("", "prow-configs")
 	if err != nil {
 		log.WithError(err).Error("Could not create a temp directory to store configs.")
 		return nil, err
 	}
 	defer os.RemoveAll(tmpdir)
 
-	org, repo, err := gitv2.OrgRepo(prFullName)
+	org, repo, err := pi_github.OrgRepo(prFullName)
 	if err != nil {
 		log.WithError(err).Errorf("Could not parse repo name: %s", prFullName)
 		return nil, err

@@ -10,7 +10,7 @@ presubmits:
         timeout: 4h
         grace_period: 5m
       max_concurrency: 6
-      cluster: kubevirt-prow-workloads
+      cluster: prow-workloads
       labels:
         preset-podman-in-container-enabled: "true"
         preset-docker-mirror-proxy: "true"
@@ -24,7 +24,7 @@ presubmits:
               privileged: true
             resources:
               requests:
-                memory: "29Gi"
+                memory: "52Gi"
             command:
               - "/usr/local/bin/runner.sh"
               - "/bin/sh"
@@ -39,7 +39,7 @@ presubmits:
         timeout: 3h
         grace_period: 5m
       max_concurrency: 6
-      cluster: kubevirt-prow-workloads
+      cluster: prow-workloads
       labels:
         preset-podman-in-container-enabled: "true"
         preset-docker-mirror-proxy: "true"
@@ -53,7 +53,7 @@ presubmits:
               privileged: true
             resources:
               requests:
-                memory: "29Gi"
+                memory: "52Gi"
             command:
               - "/usr/local/bin/runner.sh"
               - "/bin/sh"
@@ -68,7 +68,7 @@ presubmits:
         timeout: 3h
         grace_period: 5m
       max_concurrency: 6
-      cluster: kubevirt-prow-workloads
+      cluster: prow-workloads
       labels:
         preset-podman-in-container-enabled: "true"
         preset-docker-mirror-proxy: "true"
@@ -82,7 +82,7 @@ presubmits:
               privileged: true
             resources:
               requests:
-                memory: "29Gi"
+                memory: "52Gi"
             command:
               - "/usr/local/bin/runner.sh"
               - "/bin/sh"
@@ -98,7 +98,7 @@ presubmits:
         timeout: 3h
         grace_period: 25m
       max_concurrency: 6
-      cluster: kubevirt-prow-workloads
+      cluster: prow-workloads
       labels:
         preset-podman-in-container-enabled: "true"
         preset-docker-mirror-proxy: "true"
@@ -112,7 +112,7 @@ presubmits:
               privileged: true
             resources:
               requests:
-                memory: "29Gi"
+                memory: "52Gi"
             command:
               - "/usr/local/bin/runner.sh"
               - "/bin/sh"
@@ -130,7 +130,7 @@ presubmits:
         preset-podman-in-container-enabled: "true"
         preset-docker-mirror-proxy: "true"
         preset-shared-images: "true"
-      cluster: kubevirt-prow-workloads
+      cluster: prow-workloads
       spec:
         nodeSelector:
           type: bare-metal-external
@@ -156,7 +156,7 @@ presubmits:
         timeout: 3h
         grace_period: 25m
       max_concurrency: 6
-      cluster: kubevirt-prow-workloads
+      cluster: prow-workloads
       labels:
         preset-podman-in-container-enabled: "true"
         preset-docker-mirror-proxy: "true"
@@ -170,7 +170,7 @@ presubmits:
               privileged: true
             resources:
               requests:
-                memory: "29Gi"
+                memory: "52Gi"
             command:
               - "/usr/local/bin/runner.sh"
               - "/bin/sh"
@@ -186,7 +186,7 @@ presubmits:
         timeout: 3h
         grace_period: 25m
       max_concurrency: 6
-      cluster: kubevirt-prow-workloads
+      cluster: prow-workloads
       labels:
         preset-podman-in-container-enabled: "true"
         preset-docker-mirror-proxy: "true"
@@ -200,7 +200,7 @@ presubmits:
               privileged: true
             resources:
               requests:
-                memory: "29Gi"
+                memory: "52Gi"
             command:
               - "/usr/local/bin/runner.sh"
               - "/bin/sh"
@@ -216,7 +216,7 @@ presubmits:
         timeout: 3h
         grace_period: 25m
       max_concurrency: 6
-      cluster: kubevirt-prow-workloads
+      cluster: prow-workloads
       labels:
         preset-podman-in-container-enabled: "true"
         preset-docker-mirror-proxy: "true"
@@ -230,7 +230,7 @@ presubmits:
               privileged: true
             resources:
               requests:
-                memory: "29Gi"
+                memory: "52Gi"
             command:
               - "/usr/local/bin/runner.sh"
               - "/bin/sh"
@@ -246,7 +246,7 @@ presubmits:
         timeout: 3h
         grace_period: 25m
       max_concurrency: 6
-      cluster: kubevirt-prow-workloads
+      cluster: prow-workloads
       labels:
         preset-podman-in-container-enabled: "true"
         preset-docker-mirror-proxy: "true"
@@ -260,7 +260,7 @@ presubmits:
               privileged: true
             resources:
               requests:
-                memory: "29Gi"
+                memory: "52Gi"
             command:
               - "/usr/local/bin/runner.sh"
               - "/bin/sh"
@@ -277,7 +277,7 @@ presubmits:
         timeout: 3h
         grace_period: 25m
       max_concurrency: 6
-      cluster: kubevirt-prow-workloads
+      cluster: prow-workloads
       labels:
         preset-podman-in-container-enabled: "true"
         preset-docker-mirror-proxy: "true"
@@ -291,7 +291,7 @@ presubmits:
               privileged: true
             resources:
               requests:
-                memory: "29Gi"
+                memory: "52Gi"
             command:
               - "/usr/local/bin/runner.sh"
               - "/bin/sh"
@@ -307,7 +307,7 @@ presubmits:
         timeout: 3h
         grace_period: 25m
       max_concurrency: 6
-      cluster: kubevirt-prow-workloads
+      cluster: prow-workloads
       labels:
         preset-podman-in-container-enabled: "true"
         preset-docker-mirror-proxy: "true"
@@ -321,7 +321,7 @@ presubmits:
               privileged: true
             resources:
               requests:
-                memory: "29Gi"
+                memory: "52Gi"
             command:
               - "/usr/local/bin/runner.sh"
               - "/bin/sh"
